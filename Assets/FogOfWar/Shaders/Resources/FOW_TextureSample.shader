@@ -8,7 +8,7 @@ Shader "Hidden/FullScreen/FOW/TextureSample"
         Pass
         {
             HLSLPROGRAM
-            #pragma multi_compile_local _ IS_2D
+            #pragma multi_compile_local IS_2D IS_3D
 
             #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
             //unity 2020 normal texture is VS, not WS. you can just remove this if you care about the extra varients.
@@ -17,7 +17,7 @@ Shader "Hidden/FullScreen/FOW/TextureSample"
             #pragma vertex Vert
             #pragma fragment Frag
 
-            #include_with_pragmas "../FogOfWarLogic.hlsl"
+            #include_with_pragmas "FogOfWarLogic.hlsl"
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
@@ -57,7 +57,7 @@ Shader "Hidden/FullScreen/FOW/TextureSample"
                 height = 0;
                 float2 uvSample = pos + (_Time.yy * _fowScrollSpeed);
                 float4 fogColor = tex2D(_fowTexture, uvSample * _fowTiling);
-            #else
+            #elif IS_3D
                 float2 uv = i.texcoord;
 
             #if UNITY_REVERSED_Z

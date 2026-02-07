@@ -38,6 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -248,36 +249,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 12
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: -3
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 6.41
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 40
-  opacity: 1
-  addCorners: 0
+  ViewRadius: 12
+  SoftenDistance: 3
+  ViewAngle: 40
+  UnobscuredRadius: -3
+  Opacity: 1
+  AddCorners: 0
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 1
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 6.41
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 1
+  StaticRevealer: 0
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -287,10 +291,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!4 &131462857
 Transform:
   m_ObjectHideFlags: 0
@@ -1521,15 +1521,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b1afdc8801548c4cab37872782c6e11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UpdateMethod: 1
+  UsingSoftening: 0
   FogType: 1
   FogFade: 3
-  FogFadePower: 1
-  BlendType: 1
+  BlendType: 0
+  EdgeSoftenDistance: 0.3
+  UnobscuredSoftenDistance: 0.25
+  UseInnerSoften: 1
+  InnerSoftenAngle: 5
+  AllowBleeding: 0
+  SightExtraAmount: 0.01
+  MaxFogDistance: 1000
+  PixelateFog: 0
+  WorldSpacePixelate: 0
+  PixelDensity: 2
+  RoundRevealerPosition: 0
+  PixelGridOffset: {x: 0, y: 0}
   UseDithering: 0
   DitherSize: 20
-  SightExtraAmount: 0.01
-  EdgeSoftenDistance: 0.3
-  MaxFogDistance: 1000
+  InvertFowEffect: 0
+  FogFadePower: 1
   FogAppearance: 3
   UnknownColor: {r: 0.40392157, g: 0.40392157, b: 0.40392157, a: 0.83137256}
   SaturationStrength: 0
@@ -1540,50 +1552,36 @@ MonoBehaviour:
   FogTexture: {fileID: 2800000, guid: e47f79b3449108f4fbb12890e55f5d70, type: 3}
   UseTriplanar: 1
   FogTextureTiling: {x: 0.1, y: 0.1}
-  FogScrollSpeed: {x: 1, y: 1}
+  FogScrollSpeed: 3
   OutlineThickness: 0.1
-  PixelateFog: 0
-  WorldSpacePixelate: 0
-  PixelDensity: 2
-  RoundRevealerPosition: 0
-  PixelGridOffset: {x: 0, y: 0}
-  UseWorldBounds: 0
-  WorldBoundsSoftenDistance: 1
-  WorldBoundsInfluence: 1
-  InvertFowEffect: 0
-  AllowBleeding: 0
   FOWSamplingMode: 1
-  HidersUseFogTexture: 1
-  AsyncReadbackFogDataToCpu: 0
+  UseRegrow: 0
+  RevealerFadeIn: 0
+  FogRegrowSpeed: 0.5
+  InitialFogExplorationValue: 0
+  MaxFogRegrowAmount: 0.5
+  FowTextureMaterial: {fileID: 0}
+  FowResX: 512
+  FowResY: 1024
   UseConstantBlur: 1
   ConstantTextureBlurQuality: 2
   ConstantTextureBlurAmount: 0.75
-  UseMiniMap: 0
-  FowResX: 512
-  FowResY: 1024
-  UseRegrow: 0
-  RevealerFadeIn: 0
-  RevealerFadeInSpeed: 0.5
-  RevealerFadeOut: 0
-  RevealerFadeOutSpeed: 0.5
-  InitialFogExplorationValue: 0
-  MaxFogRegrowAmount: 0.5
+  UseWorldBounds: 0
+  WorldBoundsSoftenDistance: 1
+  WorldBoundsInfluence: 1
   WorldBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 28, y: 0.5, z: 52.5}
-  UpdateMethod: 1
-  RevealerUpdateMode: 1
+  UseMiniMap: 0
+  MiniMapColor: {r: 0.65, g: 0.65, b: 0.65, a: 0.65}
+  UIImage: {fileID: 0}
+  revealerMode: 1
   MaxNumRevealersPerFrame: 3
-  UseSpatialAcceleration: 1
-  NumSpatialHashBuckets: 1024
-  SpatialHashGridSize: 32
   MaxPossibleRevealers: 256
   MaxPossibleSegmentsPerRevealer: 128
-  MaxPossibleHiders: 512
   is2D: 0
-  GamePlaneOrientation: 0
+  gamePlane: 0
   FogOfWarMaterial: {fileID: 0}
-  FowTextureMaterial: {fileID: 0}
 --- !u!4 &618396800
 Transform:
   m_ObjectHideFlags: 0
@@ -2521,7 +2519,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41eea5c3a239e31459a4f1b34093eca5, type: 3}
+  m_Script: {fileID: 11500000, guid: 9de49a7657279af4c8e6f1889b2e8626, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &967918342
@@ -3248,36 +3246,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 10
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 3
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 360
-  opacity: 1
-  addCorners: 1
+  ViewRadius: 10
+  SoftenDistance: 3
+  ViewAngle: 360
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 1
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 0
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 0
+  StaticRevealer: 0
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -3287,10 +3288,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!1 &1189069633
 GameObject:
   m_ObjectHideFlags: 0
@@ -4183,36 +4180,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 15
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 3
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 360
-  opacity: 1
-  addCorners: 0
+  ViewRadius: 15
+  SoftenDistance: 3
+  ViewAngle: 360
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 0
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 1
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 1
+  StaticRevealer: 0
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -4222,10 +4222,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!23 &1547423713
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4839,36 +4835,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 9.24
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 3
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 45
-  opacity: 1
-  addCorners: 0
+  ViewRadius: 9.24
+  SoftenDistance: 3
+  ViewAngle: 45
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 0
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 0
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.001
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 0
+  StaticRevealer: 1
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -4878,10 +4877,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!4 &1792574032
 Transform:
   m_ObjectHideFlags: 0
@@ -6819,7 +6814,6 @@ MonoBehaviour:
   DrawDebugStats: 1
   DrawSegments: 0
   DrawOutline: 0
-  DrawForward: 0
   DrawRayNoise: 0
 --- !u!114 &1573883948171016995
 MonoBehaviour:
@@ -6833,36 +6827,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 3
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 3
-  visionHeightSoftenDistance: 0
-  viewAngle: 360
-  opacity: 1
-  addCorners: 0
+  ViewRadius: 3
+  SoftenDistance: 3
+  ViewAngle: 360
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 0
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 1
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 0
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 1
+  StaticRevealer: 0
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -6872,10 +6869,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!4 &1573883948171017021
 Transform:
   m_ObjectHideFlags: 0

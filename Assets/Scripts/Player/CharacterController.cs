@@ -37,7 +37,7 @@ public enum BonusOrientationMethod
     TowardsGroundSlopeAndGravity,
 }
 
-public class CharacterController : MonoBehaviour, ICharacterController
+public class PlayerCharacterController : MonoBehaviour, ICharacterController
 {
     public KinematicCharacterMotor Motor;
 

@@ -4,17 +4,16 @@ using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
-using UnityEngine;
-using System;
-using UnityEngine.Serialization;
-using static FOW.FogOfWarRevealer3D;
 using Unity.Mathematics;
-using UnityEngine.Rendering;
-using Unity.Profiling;
-using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+using UnityEngine.UI;
+using static Unity.Burst.Intrinsics.X86.Avx;
+using System;
 
 
 #if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine.Profiling;
 #endif
 
@@ -23,45 +22,39 @@ namespace FOW
     [DefaultExecutionOrder(-100)]
     public class FogOfWarWorld : MonoBehaviour
     {
+        public static FogOfWarWorld instance;
 
-        #region SERIALIZED STUFF
+        public FowUpdateMethod UpdateMethod = FowUpdateMethod.LateUpdate;
 
-        //RENDERING OPTIONS
+        public bool UsingSoftening;
+
         public FogOfWarType FogType = FogOfWarType.Soft;
         public FogOfWarFadeType FogFade = FogOfWarFadeType.Smoothstep;
-        public float FogFadePower = 1;
-        public FogOfWarBlendMode BlendType = FogOfWarBlendMode.Additive;
-
-        #region DITHERING
-
-        [Tooltip("Uses dithering instead of true opacity.")]
+        public FogOfWarBlendMode BlendType = FogOfWarBlendMode.Max;
+        public float EdgeSoftenDistance = .1f;
+        public float UnobscuredSoftenDistance = .25f;
+        public bool UseInnerSoften = true;
+        public float InnerSoftenAngle = 5;
+        public bool AllowBleeding = false;
+        public float SightExtraAmount = .01f;
+        public float MaxFogDistance = 10000f;
+        public bool PixelateFog = false;
+        public bool WorldSpacePixelate = false;
+        public float PixelDensity = 2f;
+        public bool RoundRevealerPosition = false;
+        public Vector2 PixelGridOffset;
         public bool UseDithering = false;
         public float DitherSize = 20;
+        public bool InvertFowEffect;
 
-        #endregion
+        public float FogFadePower = 1;
 
-        [Tooltip("Prevents Z-Fighting by allowing fog to slightly expand past its actual vision radius." +
-            "\n\nYou can also use negative values to prevent unwanted bleeding, in the case you use pixelated fog, or texture fog with a low resolution.")]
-        public float SightExtraAmount = .01f;
-        [Tooltip("Controls softening for Revealer Extra Sight Distance")]
-        public float EdgeSoftenDistance = .1f;
-
-        [Tooltip("Controls the maximum distance FOW is rendered")]
-        public float MaxFogDistance = 10000f;
-
-        //SHADER OPTIONS
         [SerializeField] private FogOfWarAppearance FogAppearance;
 
         [Tooltip("The color of the fog")]
         public Color UnknownColor = new Color(.35f, .35f, .35f);
 
-        #region Grayscale Sample Options
-
         public float SaturationStrength = 0;
-
-        #endregion
-
-        #region Blur Fog Shader Options
 
         public float BlurStrength = 1;
         //public float blurPixelOffset = 2.5f;
@@ -71,202 +64,83 @@ namespace FOW
         public float BlurDistanceScreenPercentMax = 1;
         public int BlurSamples = 6;
 
-        #endregion
-
-        #region Texture Sample Shader Options
-
         public Texture2D FogTexture;
         public bool UseTriplanar = true;
         public Vector2 FogTextureTiling = Vector2.one;
         public Vector2 FogScrollSpeed = Vector2.one;
 
-        #endregion
-
-        #region Outline Shader Options
-
         public float OutlineThickness = .1f;
 
-        #endregion
-
-        //EXTRA RENDERING OPTIONS
-        #region PIXELATION
-
-        public bool PixelateFog = false;
-        public bool WorldSpacePixelate = false;
-        public float PixelDensity = 2f;
-        public bool RoundRevealerPosition = false;
-        public Vector2 PixelGridOffset;
-
-        #endregion
-
-        #region WORLD BOUNDS
-
-        public bool UseWorldBounds;
-        public float WorldBoundsSoftenDistance = 1f;
-        public float WorldBoundsInfluence = 1;
-
-        #endregion
-
-        public bool InvertFowEffect;
-
-        [Tooltip("Allows fog to slightly bleed past obstacle edges in an arc shape")]
-        public bool AllowBleeding = false;
-
-        //SAMPLING MODE OPTIONS
-        [Tooltip("Controls how fog is sampled in the fullscreen shader" +
-            "\n\nPixel-Perfect- Fog is calculated per-pixel in screen space." +
-            "\n  Pros:\n    -This mode allows for unlimited world sized with full resolution fog." +
-            "\n  Cons:\n    -Cannot use temporal based effects, like fog memory/regrow/retention." +
-            "\n\nTexture Storage- This mode uses a more traditional method of rendering FOW. It first does the fog calculations on a Render Texture, then samples that render texture in the fullscreen shader." +
-            "\n  Pros:\n    -Can use extra fog effects, such as fog memory/regrow/retention." +
-            "\n  Cons:\n    -Requires rendering to a render texture, which uses gpu memory.\n    -Resolution bound, large worlds requires rendering the fog texture at higher resolutions to avoid seeing noticeable grids.")]
         public FogSampleMode FOWSamplingMode = FogSampleMode.Pixel_Perfect;
-
-        #region TEXTURE SAMPLE FOG OPTIONS
-
-        [Tooltip("When true, hiders will sample the Texture Storage fog, instead of using a revealers direct line of sight")]
-        public bool HidersUseFogTexture = true;
-        [Tooltip("The threshold at which hiders are seen with the fog texture.")]
-        [Range(0,1f)]
-        public float HiderSeenThreshold = .5f;
-        [Tooltip("When true, sampling the fog texture on the CPU will be much faster, but will calculate it even when its not needed." +
-            "\n\nYou should definitely keep this true if you need to sample the fog texture from code frequently." +
-            "\n\nIf Hiders Use Fog Texture is true, then this is also true.")]
-        public bool AsyncReadbackFogDataToCpu = false;
-
+        public bool UseRegrow;
+        public bool RevealerFadeIn = false;
+        public float FogRegrowSpeed = .5f;
+        public float InitialFogExplorationValue = 0;
+        public float MaxFogRegrowAmount = .3f;
+        RenderTexture FOW_RT;
+        RenderTexture FOW_TEMP_RT;
+        public Material FowTextureMaterial;
+        public int FowResX = 256;
+        public int FowResY = 256;
         public bool UseConstantBlur = true;
         public int ConstantTextureBlurQuality = 2;
         public float ConstantTextureBlurAmount = 0.75f;
 
-        #endregion
-
-        //FOW TEXTURE OPTIONS
-        public bool UseMiniMap;
-        //public int FowTextureMsaa = 8;
-        public int FowResX = 512;
-        public int FowResY = 512;
-
-        #region REGROW OPTIONS
-
-        public bool UseRegrow;
-        public bool RevealerFadeIn = false;
-        public float RevealerFadeInSpeed = .5f;
-
-        public bool RevealerFadeOut = false;
-        [FormerlySerializedAs("FogRegrowSpeed")]
-        public float RevealerFadeOutSpeed = .5f;
-
-        public float InitialFogExplorationValue = 0;
-        public float MaxFogRegrowAmount = .3f;
-
-        #endregion
-
-        //WORLD BOUNDS
+        public bool UseWorldBounds;
+        public float WorldBoundsSoftenDistance = 1f;
+        public float WorldBoundsInfluence = 1;
         public Bounds WorldBounds = new Bounds(Vector3.zero, Vector3.one);
+        
+        public bool UseMiniMap;
+        public Color MiniMapColor = new Color(.4f, .4f, .4f, .95f);
+        public RawImage UIImage;
 
-        //CONFIG AND OPTIMIZATION
-        [Tooltip("Changes where Fog of War updates revealers, calculates hiders, and updates the fog texture." +
-            "\n\nUpdate: Updates happen in update" +
-            "\n\nLate Update: Updates happen in Late Update" +
-            "\n\nStart in update, Finish in late update: Since revealers use the c# jobs system, we can use this option to let the job run for as long as possible before completing the job manually.")]
-        public FowUpdateMethod UpdateMethod = FowUpdateMethod.LateUpdate;
+        //public bool AllowMinimumDistance = false;
 
-        [Tooltip("Controls how revealers are calculated" +
-            "\n\nEvery Frame- Every revealer is calculated every frame" +
-            "\n\nTime Spliced- Revealers take turns being calculated. You can choose how many are calculated per-frame." +
-            "\n\nManual Updates- Revealers will not be automatically updated. Instead, you can update them manually in code.")]
-        [FormerlySerializedAs("revealerMode")]
-        public RevealerUpdateMethod RevealerUpdateMode = RevealerUpdateMethod.N_Per_Frame;
+        public RevealerUpdateMode revealerMode = RevealerUpdateMode.Every_Frame;
+        [Tooltip("The number of revealers to update each frame. Only used when Revealer Mode is set to N_Per_Frame")]
+        public int MaxNumRevealersPerFrame = 3;
 
-        [Tooltip("The number of revealers to update each frame. Only used when Revealer Mode is set to 'Time Spliced'")]
-        public int MaxNumRevealersPerFrame = 25;
-
-        [SerializeField] public bool UseSpatialAcceleration = true;
-        [Tooltip("The cell size used for the spatial hash grid. The best value to use for this will be your average revealers radius (including soften distance) times two.")]
-        [SerializeField] private int SpatialHashGridSize = 32;
-        [Tooltip("How many buckets to use when spatial hashing. more buckets = less collision")]
-        [SerializeField] private int NumSpatialHashBuckets = 1024;
-
-        //utility options
         [Tooltip("The Max possible number of revealers. Keep this as low as possible to use less GPU memory")]
         public int MaxPossibleRevealers = 256;
         [Tooltip("The Max possible number of segments per revealer. Keep this as low as possible to use less GPU memory")]
         public int MaxPossibleSegmentsPerRevealer = 128;
-        [Tooltip("The Max possible number of Hiders. Keep this as low as possible to use less memory. It will automatically resize if you add too many hiders, but that can cause a hitch!")]
-        public int MaxPossibleHiders = 512;
+
         public bool is2D;
-        [FormerlySerializedAs("gamePlane")]
-        public GamePlane GamePlaneOrientation = GamePlane.XZ;
-
-        #endregion
-
-        #region RUNTIME STUFF
-
-        public static FogOfWarWorld instance;
-
-        public static bool UsingSoftening;
+        public GamePlane gamePlane = GamePlane.XZ;
 
         public Material FogOfWarMaterial;
-        public Material FowTextureMaterial;
-        static RenderTexture FOW_RT;
-        static RenderTexture FOW_TEMP_RT;
 
-        static int TotalMaximumSightSegments;
-        public static ComputeBuffer ActiveRevealerIndicesBuffer;    //only used for non-spatial hash path. remove when spatial hashing is battle tested.
-        public static ComputeBuffer RevealerInfoBuffer;
-        public static ComputeBuffer RevealerDataBuffer;
+        static int maxCones;
+        public static ComputeBuffer IndicesBuffer;
+        public static ComputeBuffer CircleBuffer;
         public static ComputeBuffer AnglesBuffer;
 
-        #region REVEALERS
 
-        public static FogOfWarRevealer[] ActiveRevealers;
-        public static FogOfWarRevealer[] UnsortedRevealers;
-        public static int NumActiveRevealers;
+        public static FogOfWarRevealer[] Revealers;
+        private static int _numRevealers;
         public static int numDynamicRevealers;
-        public static List<int> DeregisteredRevealerIDs = new List<int>();
-        private static int numDeregisteredRevealers = 0;
-        public static List<FogOfWarRevealer> RevealersToRegister = new List<FogOfWarRevealer>();     //revealers to register once fow world exists
 
-        #endregion
-
-        #region HIDERS
-
-        public static FogOfWarHider[] ActiveHiders;
-        public static FogOfWarHider[] UnsortedHiders;
-        public static int[] ActiveHiderIndices;
-        public static int NumActiveHiders;
+        public static List<FogOfWarHider> HidersList = new List<FogOfWarHider>();
         public static List<PartialHider> PartialHiders = new List<PartialHider>();
-        public static List<int> DeregisteredHiderIDs = new List<int>();
-        private static int numDeregisteredHiders = 0;
-        public static List<FogOfWarHider> HidersToRegister = new List<FogOfWarHider>(); //hiders to register once fow world exists
+        public static int NumHiders;
+        public static List<FogOfWarRevealer> RevealersToRegister = new List<FogOfWarRevealer>();
 
-        #endregion
+        public static List<int> DeregisteredIDs = new List<int>();
+        private static int numDeregistered = 0;
 
         private static int[] indiciesDataToSet = new int[1];
-        private static bool UsingFowTexture;
 
-        private AsyncFogTextureReader _asyncFogTextureReader;
-        private static bool revealerSeesHiders;
-        //private static bool UsingFogAsyncReadback;
-
-        #endregion
-
-        #region SHADER IDS
-
-        //compute buffer shader ids
-        int activeRevealerIndicesID = Shader.PropertyToID("_ActiveRevealerIndices");
-        int revealerInfoID = Shader.PropertyToID("_RevealerInfoBuffer");
-        int revealerDataID = Shader.PropertyToID("_RevealerDataBuffer");
-        int sightSegmentBufferID = Shader.PropertyToID("_SightSegmentBuffer");
-
-        static int FowEffectStrengthID = Shader.PropertyToID("FowEffectStrength");
         int numRevealersID = Shader.PropertyToID("_NumRevealers");
         int materialColorID = Shader.PropertyToID("_unKnownColor");
+        //int blurRadiusID = Shader.PropertyToID("_fadeOutDistance");
+        int unobscuredBlurRadiusID = Shader.PropertyToID("_unboscuredFadeOutDistance");
         int extraRadiusID = Shader.PropertyToID("_extraRadius");
         int maxDistanceID = Shader.PropertyToID("_maxDistance");
         int fadePowerID = Shader.PropertyToID("_fadePower");
         int saturationStrengthID = Shader.PropertyToID("_saturationStrength");
         int blurStrengthID = Shader.PropertyToID("_blurStrength");
+        //int blurPixelOffsetID = Shader.PropertyToID("_blurPixelOffset");
         int blurPixelOffsetMinID = Shader.PropertyToID("_blurPixelOffsetMin");
         int blurPixelOffsetMaxID = Shader.PropertyToID("_blurPixelOffsetMax");
         int blurSamplesID = Shader.PropertyToID("_blurSamples");
@@ -275,78 +149,42 @@ namespace FOW
         int fowTilingID = Shader.PropertyToID("_fowTiling");
         int fowSpeedID = Shader.PropertyToID("_fowScrollSpeed");
 
-        #endregion
-
-        #region Profiler Markers
-
-#if UNITY_EDITOR
-
-        static readonly ProfilerMarker UploadToGpuProfileMarker = new ProfilerMarker("Write to compute buffers");
-        static readonly ProfilerMarker HiderBucketsProfileMarker = new ProfilerMarker("Update Hider Buckets");
-        static readonly ProfilerMarker RegisterRevealersProfileMarker = new ProfilerMarker("Register Revealer");
-        static readonly ProfilerMarker DeRegisterRevealersProfileMarker = new ProfilerMarker("De-Register Revealer");
-        static readonly ProfilerMarker RegisterHiderProfileMarker = new ProfilerMarker("Register Hider");
-        static readonly ProfilerMarker DeRegisterHiderProfileMarker = new ProfilerMarker("De-Register Hider");
-        static readonly ProfilerMarker LoopRevealersProfileMarker = new ProfilerMarker("Loop Revealers");
-        static readonly ProfilerMarker FogTextureBlitProfileMarker = new ProfilerMarker("Fog Texture Blit");
-        static readonly ProfilerMarker TextureHiderSampleProfileMarker = new ProfilerMarker("Fog Hider Sample (from texture)");
-
-#endif
-
-        #endregion
-
         #region Data Structures
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct RevealerInfoStruct
+        public struct RevealerStruct
         {
+            public Vector2 CircleOrigin;
             public int StartIndex;
-
-            public float RevealerVisionRadius;
-            public float RevealerVisionRadiusFade;
-
-            public float innerSoftenThreshold;
-            public float invInnerSoftenThreshold;
-
-            public float UnobscuredRadius;
-            public float UnobscuredSoftenRadius;
-            
-            public float VisionHeight;
-            public float VisionHeightFade;
-            public float Opacity;
-            public int UseOcclusion;   //0 false, 1 true
-        };
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RevealerDataStruct
-        {
-            public float RevealerTotalVisionRadius;
-            public Vector2 RevealerPosition;
-            public float RevealerHeight;
             public int NumSegments;
+            public float CircleHeight;
+            public float UnobscuredRadius;
+            //public int isComplete;
+            public float CircleRadius;
+            public float CircleFade;
+            public float VisionHeight;
+            public float HeightFade;
+            public float Opacity;
         };
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct GpuSightSegment
+        public struct ConeEdgeStruct
         {
-            public float2 direction;
+            public float angle;
             public float length;
+            public int cutShort;
         };
-
         public enum FowUpdateMethod
         {
             Update,
-            LateUpdate,
-            StartInUpdateFinishInLateUpdate
+            LateUpdate
         };
-
-        public enum RevealerUpdateMethod
+        public enum RevealerUpdateMode
         {
             Every_Frame,
             N_Per_Frame,
             Controlled_ElseWhere,
         };
-
         public enum FogSampleMode
         {
             Pixel_Perfect,
@@ -374,7 +212,7 @@ namespace FOW
         public enum FogOfWarBlendMode
         {
             Max,
-            Additive,
+            Addative,
         };
 
         public enum FogOfWarAppearance
@@ -395,8 +233,6 @@ namespace FOW
         };
         #endregion
 
-        #region Unity Methods
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void OnLoad()
         {
@@ -406,20 +242,13 @@ namespace FOW
         static void ResetStatics()
         {
             instance = null;
+            HidersList = new List<FogOfWarHider>();
             PartialHiders = new List<PartialHider>();
-            
-            NumActiveRevealers = 0;
-            numDynamicRevealers = 0;
+            NumHiders = 0;
             RevealersToRegister = new List<FogOfWarRevealer>();
-            DeregisteredRevealerIDs = new List<int>();
-            numDeregisteredRevealers = 0;
-
-            NumActiveHiders = 0;
-            HidersToRegister = new List<FogOfWarHider>();
-            DeregisteredHiderIDs = new List<int>();
-            numDeregisteredHiders = 0;
         }
 
+        #region Unity Methods
         private void Awake()
         {
             Initialize();
@@ -452,167 +281,77 @@ namespace FOW
         private void Update()
         {
             if (UpdateMethod == FowUpdateMethod.Update)
-            {
-                CalculateFOWPhaseOne();
-                CalculateFOWPhaseTwo();
-            }
-            else if (UpdateMethod == FowUpdateMethod.StartInUpdateFinishInLateUpdate)
-                CalculateFOWPhaseOne();
+                CalculateFOW();
         }
 
         private void LateUpdate()
         {
             if (UpdateMethod == FowUpdateMethod.LateUpdate)
-            {
-                CalculateFOWPhaseOne();
-                CalculateFOWPhaseTwo();
-            }
-            else if (UpdateMethod == FowUpdateMethod.StartInUpdateFinishInLateUpdate)
-                CalculateFOWPhaseTwo();
+                CalculateFOW();
         }
 
         #endregion
 
-        #region FOW/Revealer updates
-        
-        void CalculateFOWPhaseOne()
+        void CalculateFOW()
         {
-            if (NumActiveRevealers <= 0)
-                return;
-
-            if (revealerSeesHiders && SparseRevealerGrid.SpatialAccelerationActive)
+            if (_numRevealers > 0)
             {
-#if UNITY_EDITOR
-                HiderBucketsProfileMarker.Begin();
-#endif
-                for (int i = 0; i < NumActiveHiders; i++)
+                switch (revealerMode)
                 {
-                    ActiveHiders[i].UpdateBuckets();
-                }
-#if UNITY_EDITOR
-                HiderBucketsProfileMarker.End();
-#endif
-            }
-
-#if UNITY_EDITOR
-            LoopRevealersProfileMarker.Begin();
-#endif
-
-            switch (RevealerUpdateMode)
-            {
-                case RevealerUpdateMethod.Every_Frame:
-                    for (int i = 0; i < NumActiveRevealers; i++)
-                    {
-                        var revealer = ActiveRevealers[i];
-                        if (!revealer.CurrentlyStaticRevealer)
-                            revealer.LineOfSightPhase1();
-                        if (revealerSeesHiders)
-                            revealer.RevealHiders();
-                    }
-                    break;
-                case RevealerUpdateMethod.N_Per_Frame:
-                    int index = currentIndex;
-                    for (int i = 0; i < Mathf.Clamp(MaxNumRevealersPerFrame, 0, numDynamicRevealers); i++)
-                    {
-                        index = (index + 1) % NumActiveRevealers;
-
-                        var revealer = ActiveRevealers[index];
-                        if (!revealer.CurrentlyStaticRevealer)
-                            revealer.LineOfSightPhase1();
-                        else
-                            i--;
-
-                        if (revealerSeesHiders)
-                            revealer.RevealHiders();
-                    }
-                    break;
-                case RevealerUpdateMethod.Controlled_ElseWhere: break;
-            }
-
-            //FogOfWarRevealer.PostPhaseOne();
-
-#if UNITY_EDITOR
-            LoopRevealersProfileMarker.End();
-#endif
-        }
-
-        void CalculateFOWPhaseTwo()
-        {
-            if (NumActiveRevealers > 0)
-            {
-#if UNITY_EDITOR
-                LoopRevealersProfileMarker.Begin();
-#endif
-                switch (RevealerUpdateMode)
-                {
-                    case RevealerUpdateMethod.Every_Frame:
-                        for (int i = 0; i < NumActiveRevealers; i++)
+                    case RevealerUpdateMode.Every_Frame:
+                        for (int i = 0; i < _numRevealers; i++)
                         {
-                            if (!ActiveRevealers[i].CurrentlyStaticRevealer)
-                                ActiveRevealers[i].LineOfSightPhase2();
+                            Revealers[i].RevealHiders();
+                            if (!Revealers[i].StaticRevealer)
+                                Revealers[i].LineOfSightPhase1();
+                        }
+                        for (int i = 0; i < _numRevealers; i++)
+                        {
+                            if (!Revealers[i].StaticRevealer)
+                                Revealers[i].LineOfSightPhase2();
                         }
                         break;
-                    case RevealerUpdateMethod.N_Per_Frame:
+                    case RevealerUpdateMode.N_Per_Frame:
+                        int index = currentIndex;
                         for (int i = 0; i < Mathf.Clamp(MaxNumRevealersPerFrame, 0, numDynamicRevealers); i++)
                         {
-                            currentIndex = (currentIndex + 1) % NumActiveRevealers;
-                            if (!ActiveRevealers[currentIndex].CurrentlyStaticRevealer)
-                                ActiveRevealers[currentIndex].LineOfSightPhase2();
+                            index = (index + 1) % _numRevealers;
+                            Revealers[index].RevealHiders();
+                            if (!Revealers[index].StaticRevealer)
+                                Revealers[index].LineOfSightPhase1();
+                            else
+                                i--;
+                        }
+                        for (int i = 0; i < Mathf.Clamp(MaxNumRevealersPerFrame, 0, numDynamicRevealers); i++)
+                        {
+                            currentIndex = (currentIndex + 1) % _numRevealers;
+                            if (!Revealers[currentIndex].StaticRevealer)
+                                Revealers[currentIndex].LineOfSightPhase2();
                             else
                                 i--;
                         }
                         break;
-                    case RevealerUpdateMethod.Controlled_ElseWhere: break;
+                    case RevealerUpdateMode.Controlled_ElseWhere: break;
                 }
-
-#if UNITY_EDITOR
-                LoopRevealersProfileMarker.End();
-#endif
             }
 
-            RenderFogTexture();
-        }
-
-        public void RenderFogTexture()
-        {
-            if (!UsingFowTexture)
-                return;
-#if UNITY_EDITOR
-            FogTextureBlitProfileMarker.Begin();
-#endif
-            if (SparseRevealerGrid.SpatialAccelerationActive)
-                SparseRevealerGrid.FlattenAndUpload();
-
-            if (UseRegrow)
+            if (UseMiniMap || FOWSamplingMode == FogSampleMode.Texture || FOWSamplingMode == FogSampleMode.Both)
             {
-                Graphics.Blit(FOW_RT, FOW_TEMP_RT);
-                Graphics.Blit(FOW_TEMP_RT, FOW_RT, FowTextureMaterial, 0);
-            }
-            else
-                Graphics.Blit(null, FOW_RT, FowTextureMaterial, 0);
+                if (UseRegrow)
+                {
+                    //we dont need the second pass anymore :)
+                    //Graphics.Blit(FOW_RT, FOW_REGROW_RT, FowTextureMaterial, 1);
+                    //Graphics.Blit(FOW_REGROW_RT, FOW_RT, FowTextureMaterial, 0);
 
-#if UNITY_EDITOR
-            FogTextureBlitProfileMarker.End();
-#endif
+                    Graphics.Blit(FOW_RT, FOW_TEMP_RT);
+                    Graphics.Blit(FOW_TEMP_RT, FOW_RT, FowTextureMaterial, 0);
 
-            bool revealHidersWithTexture = !revealerSeesHiders && NumActiveHiders != 0;
-            if (AsyncReadbackFogDataToCpu || revealHidersWithTexture)
-            {
-#if UNITY_EDITOR
-                TextureHiderSampleProfileMarker.Begin();
-#endif
-                
-                _asyncFogTextureReader.Update(FOW_RT);
-                if (revealHidersWithTexture)
-                    _asyncFogTextureReader.SeekHiders();
-
-#if UNITY_EDITOR
-                TextureHiderSampleProfileMarker.End();
-#endif
+                    //Graphics.Blit(FOW_RT, FOW_RT, FowTextureMaterial, 0);
+                }
+                else
+                    Graphics.Blit(null, FOW_RT, FowTextureMaterial, 0);
             }
         }
-
-        #endregion
 
         #region Dumb Unity Bug Workaround :)
 #if UNITY_EDITOR
@@ -628,110 +367,85 @@ namespace FOW
             yield return new WaitForEndOfFrame();
             enabled = false;
             enabled = true;
-            //FogOfWarMaterial.SetBuffer(Shader.PropertyToID("_ActiveRevealerIndices"), IndicesBuffer);
+            //FogOfWarMaterial.SetBuffer(Shader.PropertyToID("_ActiveCircleIndices"), IndicesBuffer);
             //FogOfWarMaterial.SetBuffer(Shader.PropertyToID("_CircleBuffer"), CircleBuffer);
-            //FogOfWarMaterial.SetBuffer(sightSegmentBufferID, AnglesBuffer);
+            //FogOfWarMaterial.SetBuffer(Shader.PropertyToID("_ConeBuffer"), AnglesBuffer);
             //UpdateMaterialProperties(FogOfWarMaterial);
         }
 #endif
         #endregion
 
-        #region Initialization/Cleanup
-
         void Cleanup()
         {
-            if (FogOfWarMaterial != null)
-                Destroy(FogOfWarMaterial);
-            if (FogOfWarMaterial != null)
-                Destroy(FowTextureMaterial);
-            SetFowEffectStrength(0);
-
-            for (int i = NumActiveRevealers - 1; i >= 0; i--)
+            Shader.SetGlobalFloat("FowEffectStrength", 0);
+            int n = _numRevealers;
+            for (int i = 0; i < n; i++)
             {
-                FogOfWarRevealer revealer = ActiveRevealers[i];
+                FogOfWarRevealer revealer = Revealers[0];
                 revealer.DeregisterRevealer();
                 RevealersToRegister.Add(revealer);
             }
-
-            for (int i = NumActiveHiders - 1; i >= 0; i--)
-            {
-                FogOfWarHider hider = ActiveHiders[i];
-                hider.DeregisterHider();
-                HidersToRegister.Add(hider);
-            }
-
-            if (RevealerDataBuffer != null)
+            if (CircleBuffer != null)
             {
                 //setAnglesBuffersJobHandle.Complete();
                 //AnglesNativeArray.Dispose();
-                ActiveRevealerIndicesBuffer.Dispose();
-                RevealerInfoBuffer.Dispose();
-                RevealerDataBuffer.Dispose();
+                IndicesBuffer.Dispose();
+                CircleBuffer.Dispose();
                 AnglesBuffer.Dispose();
             }
-
-            if (FOW_RT != null)
-            {
-                FOW_RT.Release();
-                Destroy(FOW_RT);
-            }
-
-            _asyncFogTextureReader?.Dispose();
-            _asyncFogTextureReader = null;
             instance = null;
-            SparseRevealerGrid.Cleanup();
         }
+
+        //private JobHandle setAnglesBuffersJobHandle;
+        //private SetAnglesBuffersJob setAnglesBuffersJob;
+        //private NativeArray<ConeEdgeStruct> AnglesNativeArray;    //was used when using computebuffer.beginwrite. will be used again when unity fixes a bug internally
+        //private NativeArray<int> _circleIndicesArray;
+        //private NativeArray<CircleStruct> _circleArray;
+        //private NativeArray<ConeEdgeStruct> _angleArray;
+        private ConeEdgeStruct[] anglesArray;
 
         public void Initialize()
         {
             if (instance != null)
                 return;
 
+            //ResetStatics();
             instance = this;
 
-            SetFowEffectStrength(1);
+            Shader.SetGlobalFloat("FowEffectStrength", 1);
 
-            if (!is2D)
-                FogOfWarRevealer3D.Projection = new PlaneProjection(GamePlaneOrientation);
-            else
-                FogOfWarRevealer3D.Projection = new PlaneProjection(GamePlane.XY);
+            maxCones = MaxPossibleRevealers * MaxPossibleSegmentsPerRevealer;
 
-            TotalMaximumSightSegments = MaxPossibleRevealers * MaxPossibleSegmentsPerRevealer;
+            Revealers = new FogOfWarRevealer[MaxPossibleRevealers];
+            //indicesBuffer = new ComputeBuffer(maxPossibleRevealers, Marshal.SizeOf(typeof(int)), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+            IndicesBuffer = new ComputeBuffer(MaxPossibleRevealers, Marshal.SizeOf(typeof(int)), ComputeBufferType.Default);
 
-            ActiveRevealers = new FogOfWarRevealer[MaxPossibleRevealers];
-            UnsortedRevealers = new FogOfWarRevealer[MaxPossibleRevealers];
-            ActiveHiders = new FogOfWarHider[MaxPossibleHiders];
-            UnsortedHiders = new FogOfWarHider[MaxPossibleHiders];
+            //circleBuffer = new ComputeBuffer(maxPossibleRevealers, Marshal.SizeOf(typeof(CircleStruct)), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+            CircleBuffer = new ComputeBuffer(MaxPossibleRevealers, Marshal.SizeOf(typeof(RevealerStruct)), ComputeBufferType.Default);
 
-            ActiveRevealerIndicesBuffer = new ComputeBuffer(MaxPossibleRevealers, Marshal.SizeOf(typeof(int)), ComputeBufferType.Default);
-            RevealerInfoBuffer = new ComputeBuffer(MaxPossibleRevealers, Marshal.SizeOf(typeof(RevealerInfoStruct)), ComputeBufferType.Default);
-            RevealerDataBuffer = new ComputeBuffer(MaxPossibleRevealers, Marshal.SizeOf(typeof(RevealerDataStruct)), ComputeBufferType.Default);
+            anglesArray = new ConeEdgeStruct[MaxPossibleSegmentsPerRevealer];
+            //AnglesNativeArray = new NativeArray<ConeEdgeStruct>(maxPossibleSegmentsPerRevealer, Allocator.Persistent);
+            //anglesBuffer = new ComputeBuffer(maxCones, Marshal.SizeOf(typeof(ConeEdgeStruct)), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
+            AnglesBuffer = new ComputeBuffer(maxCones, Marshal.SizeOf(typeof(ConeEdgeStruct)), ComputeBufferType.Default);
 
-            SightSegmentsUploadData = new GpuSightSegment[MaxPossibleSegmentsPerRevealer];
-            AnglesBuffer = new ComputeBuffer(TotalMaximumSightSegments, Marshal.SizeOf(typeof(GpuSightSegment)), ComputeBufferType.Default);
+            FogOfWarMaterial = new Material(Shader.Find("Hidden/FullScreen/FOW/SolidColor"));
+            //SetFogShader();
 
             //UpdateMaterialProperties(FogOfWarMaterial);
             if (UseMiniMap || FOWSamplingMode == FogSampleMode.Texture || FOWSamplingMode == FogSampleMode.Both)
             {
-                if (FowTextureMaterial != null)
-                    Destroy(FowTextureMaterial);
                 FowTextureMaterial = new Material(Shader.Find("Hidden/FullScreen/FOW/FOW_RT"));
                 InitFOWRT();
 
-                BindComputeBuffersToMaterial(FowTextureMaterial);
                 UpdateMaterialProperties(FowTextureMaterial);
+                FowTextureMaterial.SetBuffer(Shader.PropertyToID("_ActiveCircleIndices"), IndicesBuffer);
+                FowTextureMaterial.SetBuffer(Shader.PropertyToID("_CircleBuffer"), CircleBuffer);
+                FowTextureMaterial.SetBuffer(Shader.PropertyToID("_ConeBuffer"), AnglesBuffer);
                 FowTextureMaterial.EnableKeyword("IGNORE_HEIGHT");
             }
-
-            if (FogOfWarMaterial != null)
-                Destroy(FogOfWarMaterial);
-            //FogOfWarMaterial = new Material(Shader.Find("Hidden/FullScreen/FOW/SolidColor"));
             SetFogShader();
-            SwitchSpatialAccelerationMode(UseSpatialAcceleration);
-            SwitchHidersUseFogTextureMode(HidersUseFogTexture);
-            //ToggleFogTextureAsyncReadbackToCpu(AsyncReadbackFogDataToCpu);
             UpdateAllMaterialProperties();
-            FowBoundsUpdated();
+            SetAllMaterialBounds();
 
             //setAnglesBuffersJob = new SetAnglesBuffersJob();
 
@@ -741,101 +455,14 @@ namespace FOW
                     revealer.RegisterRevealer();
             }
             RevealersToRegister.Clear();
-
-            foreach (FogOfWarHider hider in HidersToRegister)
-            {
-                if (hider != null)
-                    hider.RegisterHider();
-            }
-            HidersToRegister.Clear();
         }
 
-        public void SwitchSpatialAccelerationMode(bool useSpatial)
-        {
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                return;
-#endif
-            if (useSpatial && !SparseRevealerGrid.SpatialAccelerationActive)
-            {
-                SparseRevealerGrid.Initialize(NumSpatialHashBuckets, SpatialHashGridSize);
-            }
-            else if (!useSpatial && SparseRevealerGrid.SpatialAccelerationActive)
-            {
-                SparseRevealerGrid.Cleanup();
-                EnableKeywordOnAllMaterials("USE_SPATIAL_HASHING", false);
-            }
-        }
-
-        public void SwitchHidersUseFogTextureMode(bool useFogTextureToSeeHiders)
-        {
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                return;
-#endif
-            HidersUseFogTexture = useFogTextureToSeeHiders;
-
-            revealerSeesHiders = FOWSamplingMode == FogSampleMode.Pixel_Perfect || !HidersUseFogTexture;
-
-            if (useFogTextureToSeeHiders)
-            {
-                for (int i = 0; i < NumActiveRevealers; i++)
-                    ActiveRevealers[i].HiderSeeker.ClearRevealedList();
-            }
-            else
-            {
-                if (_asyncFogTextureReader != null)
-                    _asyncFogTextureReader.UnseeAllHiders();
-            }
-
-            //re-initialize or dispose the async texture readback
-            ToggleFogTextureAsyncReadbackToCpu(AsyncReadbackFogDataToCpu);
-        }
-
-        public void ToggleFogTextureAsyncReadbackToCpu(bool useAsyncReadback)
-        {
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                return;
-#endif
-            AsyncReadbackFogDataToCpu = useAsyncReadback;
-
-            useAsyncReadback |= !revealerSeesHiders;
-
-            //UsingFogAsyncReadback = useAsyncFeedback;
-
-            if (!useAsyncReadback && _asyncFogTextureReader != null)
-            {
-                _asyncFogTextureReader.UnseeAllHiders();
-                _asyncFogTextureReader.Dispose();
-                _asyncFogTextureReader = null;
-            }
-            if (useAsyncReadback && _asyncFogTextureReader == null)
-            {
-                _asyncFogTextureReader = new AsyncFogTextureReader();
-                UpdateHiderSeenThresholdForFogTexture();
-            }
-        }
-
-        public void UpdateHiderSeenThresholdForFogTexture()
-        {
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                return;
-#endif
-            if (_asyncFogTextureReader == null)
-                return;
-            _asyncFogTextureReader.HiderSeeingThreshold = 1 - HiderSeenThreshold;
-        }
-
-        public static float3 UpVector;
-        public static float3 ForwardVector;
+        public static Vector3 UpVector;
+        public static Vector3 ForwardVector;
         public void SetFogShader()
         {
-#if UNITY_EDITOR
             if (!Application.isPlaying)
                 return;
-#endif
 
             UsingSoftening = false;
             string shaderName = "Hidden/FullScreen/FOW";
@@ -848,15 +475,7 @@ namespace FOW
                 case FogOfWarAppearance.Outline: shaderName += "/Outline"; break;
                 case FogOfWarAppearance.None: shaderName = "Hidden/BlitCopy"; break;
             }
-            //FogOfWarMaterial.shader = Shader.Find(shaderName);
-            FogOfWarMaterial = new Material(Shader.Find(shaderName));
-
-            //if (FogAppearance == FogOfWarAppearance.None)
-            //{
-            //    FogOfWarMaterial = null;
-            //    return;
-            //}
-            
+            FogOfWarMaterial.shader = Shader.Find(shaderName);
 #if UNITY_2021_2_OR_NEWER
 #else
             //this was required in unity 2020.3.28. when updating to 2020.3.48, its no longer required. not sure what version fixes it exactly.
@@ -871,9 +490,14 @@ namespace FOW
         public void InitializeFogProperties(Material material)
         {
             material.DisableKeyword("IS_2D");
+            material.DisableKeyword("IS_3D");
             if (!is2D)
             {
-                switch (GamePlaneOrientation)
+                material.EnableKeyword("IS_3D");
+                //material.DisableKeyword("PLANE_XZ");
+                //material.DisableKeyword("PLANE_XY");
+                //material.DisableKeyword("PLANE_ZY");
+                switch (gamePlane)
                 {
                     case GamePlane.XZ:
                         //material.EnableKeyword("PLANE_XZ");
@@ -900,52 +524,15 @@ namespace FOW
                 material.SetInt("_fowPlane", 0);
             }
 
-            BindComputeBuffersToMaterial(material);
-            BindSpatialHashComputeBuffersToMaterial(material);
-        }
-
-        public void BindComputeBuffersToMaterial(Material material)
-        {
-            material.SetBuffer(activeRevealerIndicesID, ActiveRevealerIndicesBuffer);
-            material.SetBuffer(revealerInfoID, RevealerInfoBuffer);
-            material.SetBuffer(revealerDataID, RevealerDataBuffer);
-            material.SetBuffer(sightSegmentBufferID, AnglesBuffer);
-        }
-
-        public void BindSpatialHashComputeBuffersToAllMaterials()
-        {
-            if (!Application.isPlaying)
-                return;
-            if (!SparseRevealerGrid.SpatialAccelerationActive)
-                return;
-
-            if (FogOfWarMaterial != null)
-                BindSpatialHashComputeBuffersToMaterial(FogOfWarMaterial);
-            if (FowTextureMaterial != null)
-                BindSpatialHashComputeBuffersToMaterial(FowTextureMaterial);
-
-            foreach (PartialHider hider in PartialHiders)
-                BindSpatialHashComputeBuffersToMaterial(hider.HiderMaterial);
-        }
-
-        public void BindSpatialHashComputeBuffersToMaterial(Material material)
-        {
-            material.DisableKeyword("USE_SPATIAL_HASHING");
-            if (!SparseRevealerGrid.SpatialAccelerationActive)
-                return;
-            SparseRevealerGrid.BindPropertiesToMaterial(material);
-
-            material.EnableKeyword("USE_SPATIAL_HASHING");
+            material.SetBuffer(Shader.PropertyToID("_ActiveCircleIndices"), IndicesBuffer);
+            material.SetBuffer(Shader.PropertyToID("_CircleBuffer"), CircleBuffer);
+            material.SetBuffer(Shader.PropertyToID("_ConeBuffer"), AnglesBuffer);
         }
 
         public void UpdateAllMaterialProperties()
         {
-#if UNITY_EDITOR
             if (!Application.isPlaying)
                 return;
-#endif
-
-            UsingFowTexture = UseMiniMap || FOWSamplingMode == FogSampleMode.Texture || FOWSamplingMode == FogSampleMode.Both;
 
             UpdateMaterialProperties(FogOfWarMaterial);
             if (FowTextureMaterial != null)
@@ -965,20 +552,11 @@ namespace FOW
 #endif
             material.DisableKeyword("HARD");
             material.DisableKeyword("SOFT");
-            bool newUsingSoftening = false;
+            UsingSoftening = false;
             switch (FogType)
             {
                 case FogOfWarType.Hard: material.EnableKeyword("HARD"); break;
-                case FogOfWarType.Soft: material.EnableKeyword("SOFT"); newUsingSoftening = true; break;
-            }
-
-            if (UsingSoftening != newUsingSoftening)
-            {
-                UsingSoftening = newUsingSoftening;
-                for (int i = 0; i < NumActiveRevealers; i++)
-                {
-                    ActiveRevealers[i].SetCachedRayDistance();
-                }
+                case FogOfWarType.Soft: material.EnableKeyword("SOFT"); UsingSoftening = true; break;
             }
 
             //material.DisableKeyword("BLEED");
@@ -988,7 +566,16 @@ namespace FOW
             if (AllowBleeding)
                 material.SetInt("BLEED", 1);
 
-            material.SetColor(materialColorID, UnknownColor);   
+            material.SetColor(materialColorID, material == FowTextureMaterial ? MiniMapColor : UnknownColor);
+            material.SetFloat(unobscuredBlurRadiusID, UnobscuredSoftenDistance);
+            material.DisableKeyword("INNER_SOFTEN");
+            if (FogType == FogOfWarType.Soft && UseInnerSoften)
+            {
+                material.EnableKeyword("INNER_SOFTEN");
+                material.SetFloat(Shader.PropertyToID("_fadeOutDegrees"), InnerSoftenAngle);
+            }
+            else
+                material.SetFloat(Shader.PropertyToID("_fadeOutDegrees"), 0);
 
             material.SetFloat(extraRadiusID, SightExtraAmount);
 
@@ -996,14 +583,9 @@ namespace FOW
             material.SetFloat(maxDistanceID, MaxFogDistance);
 
             #region Pixellation
-            //material.SetInt("_pixelate", 0);
-            material.DisableKeyword("PIXELATE");
+            material.SetInt("_pixelate", 0);
             if (PixelateFog && !WorldSpacePixelate)
-            {
-                //material.SetInt("_pixelate", 1);
-                material.EnableKeyword("PIXELATE");
-            }
-                
+                material.SetInt("_pixelate", 1);
 
             material.SetInt("_pixelateWS", 0);
             if (PixelateFog && WorldSpacePixelate)
@@ -1085,7 +667,7 @@ namespace FOW
                 case FogOfWarBlendMode.Max:
                     material.SetInt("BLEND_MAX", 1);
                     break;
-                case FogOfWarBlendMode.Additive:
+                case FogOfWarBlendMode.Addative:
                     material.SetInt("BLEND_MAX", 0);
                     break;
             }
@@ -1110,7 +692,7 @@ namespace FOW
                     if (!UseTriplanar)
                     {
                         material.SetInt("_skipTriplanar", 1);
-                        material.SetVector("_fowAxis", (Vector3)UpVector);
+                        material.SetVector("_fowAxis", UpVector);
                     }
                     material.SetVector(fowTilingID, FogTextureTiling);
                     material.SetVector(fowSpeedID, FogScrollSpeed);
@@ -1144,8 +726,7 @@ namespace FOW
             {
                 //material.SetTexture("_FowRT", FOW_RT);
                 //material.SetTexture("_FowRT", FogTexture);
-                material.SetFloat("_fadeOutSpeed", RevealerFadeOut ? RevealerFadeOutSpeed : 9999999);
-                material.SetFloat("_fadeInSpeed", RevealerFadeIn ? RevealerFadeInSpeed : 9999999);
+                material.SetFloat("_regrowSpeed", FogRegrowSpeed);
                 material.SetFloat("_maxRegrowAmount", MaxFogRegrowAmount);
                 material.EnableKeyword("SAMPLE_REALTIME");
                 material.DisableKeyword("SAMPLE_TEXTURE");
@@ -1153,6 +734,9 @@ namespace FOW
                 if (UseRegrow)
                 {
                     material.EnableKeyword("USE_REGROW");
+                    material.DisableKeyword("USE_FADEIN");
+                    if (RevealerFadeIn)
+                        material.EnableKeyword("USE_FADEIN");
                 }
             }
 
@@ -1173,57 +757,254 @@ namespace FOW
             SetMaterialBounds(material);
         }
 
-        public void EnableKeywordOnAllMaterials(string keyword, bool enabled)
+        public void UpdateWorldBounds(Vector3 center, Vector3 extent)
         {
-            if (!Application.isPlaying)
-                return;
+            WorldBounds.center = center;
+            WorldBounds.extents = extent;
+            SetAllMaterialBounds();
+        }
 
-            EnableKeywordOnMaterial(FogOfWarMaterial, keyword, enabled);
+        public void UpdateWorldBounds(Bounds newBounds)
+        {
+            WorldBounds = newBounds;
+            SetAllMaterialBounds();
+        }
+
+        void SetAllMaterialBounds()
+        {
+            if (FogOfWarMaterial != null)
+                SetMaterialBounds(FogOfWarMaterial);
+
             if (FowTextureMaterial != null)
-                EnableKeywordOnMaterial(FowTextureMaterial, keyword, enabled);
-
-            foreach (PartialHider hider in PartialHiders)
-                EnableKeywordOnMaterial(hider.HiderMaterial, keyword, enabled);
-
-            //SetMaterialBounds();
+                SetMaterialBounds(FowTextureMaterial);
         }
 
-        public void EnableKeywordOnMaterial(Material material, string keyword, bool enabled)
+        void SetMaterialBounds(Material mat)
         {
-            if (enabled)
-                material.EnableKeyword(keyword);
-            else
-                material.DisableKeyword(keyword);
+            //if (UseWorldBounds && FogOfWarMaterial != null)
+            Vector4 boundsVec = GetBoundsVectorForShader();
+            if (mat != null)
+                mat.SetVector("_worldBounds", boundsVec);
         }
 
-        public const RenderTextureFormat renderTextureFormat = RenderTextureFormat.RHalf;
-        public const TextureFormat saveTextureFormat = TextureFormat.RHalf;
-        public void InitFOWRT()
+        public Vector4 GetBoundsVectorForShader()
+        {
+            if (is2D)
+                return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.y, WorldBounds.center.y);
+
+            switch(gamePlane)
+            {
+                case GamePlane.XZ: return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.z, WorldBounds.center.z);
+                case GamePlane.XY: return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.y, WorldBounds.center.y);
+                case GamePlane.ZY: return new Vector4(WorldBounds.size.z, WorldBounds.center.z, WorldBounds.size.z, WorldBounds.center.z);
+            }
+
+            return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.z, WorldBounds.center.z);
+        }
+
+        public Vector2 GetFowPositionFromWorldPosition(Vector3 WorldPosition)
+        {
+            if (is2D)
+                return new Vector2(WorldPosition.x, WorldPosition.y);
+
+            switch (gamePlane)
+            {
+                case GamePlane.XZ: return new Vector2(WorldPosition.x, WorldPosition.z);
+                case GamePlane.XY: return new Vector2(WorldPosition.x, WorldPosition.y);
+                case GamePlane.ZY: return new Vector2(WorldPosition.z, WorldPosition.y);
+            }
+
+            return new Vector2(WorldPosition.x, WorldPosition.z);
+        }
+
+        void SetNumRevealers()
+        {
+            if (FogOfWarMaterial != null)
+                SetNumRevealers(FogOfWarMaterial);
+            if (FowTextureMaterial != null)
+                SetNumRevealers(FowTextureMaterial);
+            foreach (PartialHider hider in PartialHiders)
+                SetNumRevealers(hider.HiderMaterial);
+        }
+
+        public void SetNumRevealers(Material material)
+        {
+            material.SetInt(numRevealersID, _numRevealers);
+        }
+        
+        public int RegisterRevealer(FogOfWarRevealer newRevealer)
         {
 #if UNITY_EDITOR
+            Profiler.BeginSample("Register Revealer");
+#endif
+            _numRevealers++;
+            if (!newRevealer.StaticRevealer)
+                numDynamicRevealers++;
+            SetNumRevealers();
+
+            int newID = _numRevealers - 1;
+            Revealers[newID] = newRevealer;
+            if (numDeregistered > 0)
+            {
+                numDeregistered--;
+                newID = DeregisteredIDs[0];
+                DeregisteredIDs.RemoveAt(0);
+            }
+
+            newRevealer.IndexID = _numRevealers - 1;
+
+            indiciesDataToSet[0] = newID;
+            IndicesBuffer.SetData(indiciesDataToSet, 0, _numRevealers - 1, 1);
+
+            //_circleIndicesArray = indicesBuffer.BeginWrite<int>(numCircles - 1, 1);
+            //_circleIndicesArray[0] = newID;
+
+            //indicesBuffer.EndWrite<int>(1);
+
+#if UNITY_EDITOR
+            Profiler.EndSample();
+#endif
+            return newID;
+        }
+        public void DeRegisterRevealer(FogOfWarRevealer toRemove)
+        {
+#if UNITY_EDITOR
+            Profiler.BeginSample("De-Register Revealer");
+#endif
+            int index = toRemove.IndexID;
+
+            DeregisteredIDs.Add(toRemove.FogOfWarID);
+            numDeregistered++;
+
+            _numRevealers--;
+            if (!toRemove.StaticRevealer)
+                numDynamicRevealers--;
+
+            FogOfWarRevealer toSwap = Revealers[_numRevealers];
+
+            if (toRemove != toSwap)
+            {
+                Revealers[index] = toSwap;
+
+                indiciesDataToSet[0] = toSwap.FogOfWarID;
+                IndicesBuffer.SetData(indiciesDataToSet, 0, index, 1);
+                //_circleIndicesArray = indicesBuffer.BeginWrite<int>(index, 1);
+                //_circleIndicesArray[0] = toSwap.FogOfWarID;
+                toSwap.IndexID = index;
+
+                //indicesBuffer.EndWrite<int>(1);
+            }
+
+            SetNumRevealers();
+#if UNITY_EDITOR
+            Profiler.EndSample();
+#endif
+        }
+
+        private RevealerStruct[] _revealerDataToSet = new RevealerStruct[1];
+        public void UpdateRevealerData(int id, RevealerStruct data, int numHits, float[] radii, float[] distances, bool[] hits)
+        {
+#if UNITY_EDITOR
+            Profiler.BeginSample("write to compute buffers");
+#endif
+            //setAnglesBuffersJobHandle.Complete();
+            data.StartIndex = id * MaxPossibleSegmentsPerRevealer;
+            _revealerDataToSet[0] = data;
+            CircleBuffer.SetData(_revealerDataToSet, 0, id, 1);
+            //_circleArray = circleBuffer.BeginWrite<CircleStruct>(id, 1);
+            //_circleArray[0] = data;
+            //circleBuffer.EndWrite<CircleStruct>(1);
+
+            if (numHits > MaxPossibleSegmentsPerRevealer)
+            {
+                Debug.LogError($"the revealer is trying to register {numHits} segments. this is more than was set by maxPossibleSegmentsPerRevealer");
+                return;
+            }
+            for (int i = 0; i < numHits; i++)
+            {
+                anglesArray[i].angle = radii[i];
+                anglesArray[i].length = distances[i];
+                anglesArray[i].cutShort = hits[i] ? 1 : 0;
+                //AnglesNativeArray[i] = anglesArray[i];
+            }
+
+            AnglesBuffer.SetData(anglesArray, 0, id * MaxPossibleSegmentsPerRevealer, numHits);
+            //the following lines of code should work in theory, however due to a unity bug, are going to be put on hold for a little bit.
+            //_angleArray = anglesBuffer.BeginWrite<ConeEdgeStruct>(id * maxPossibleSegmentsPerRevealer, radii.Length);
+            //setAnglesBuffersJob.AnglesArray = _angleArray;
+            //setAnglesBuffersJob.Angles = AnglesNativeArray;
+            //setAnglesBuffersJobHandle = setAnglesBuffersJob.Schedule(radii.Length, 128);
+            //setAnglesBuffersJobHandle.Complete();
+            //anglesBuffer.EndWrite<ConeEdgeStruct>(radii.Length);
+
+#if UNITY_EDITOR
+            Profiler.EndSample();
+#endif
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        private struct SetAnglesBuffersJob : IJobParallelFor
+        {
+            [ReadOnly]
+            public NativeArray<ConeEdgeStruct> Angles;
+            [WriteOnly]
+            public NativeArray<ConeEdgeStruct> AnglesArray;
+
+            public void Execute(int index)
+            {
+                AnglesArray[index] = Angles[index];
+            }
+        }
+
+        /// <summary>
+        /// Test if provided point is currently visible.
+        /// </summary>
+        public static bool TestPointVisibility(Vector3 point)
+        {
+            for (int i = 0; i < _numRevealers; i++)
+            {
+                if (Revealers[i].TestPoint(point))
+                    return true;
+            }
+            return false;
+        }
+
+        public void SetFowAppearance(FogOfWarAppearance AppearanceMode)
+        {
+            FogAppearance = AppearanceMode;
             if (!Application.isPlaying)
                 return;
-#endif
 
+            enabled = false;
+            enabled = true;
+        }
+
+        public FogOfWarAppearance GetFowAppearance()
+        {
+            return FogAppearance;
+        }
+
+        public void InitFOWRT()
+        {
             var tmp = RenderTexture.active;
-            
-            FOW_RT = new RenderTexture(FowResX, FowResY, 0, renderTextureFormat, RenderTextureReadWrite.Linear);
+
+            //RenderTextureFormat format = RenderTextureFormat.ARGBFloat;
+            //RenderTextureFormat format = RenderTextureFormat.Default;
+            RenderTextureFormat format = RenderTextureFormat.ARGBHalf;
+            FOW_RT = new RenderTexture(FowResX, FowResY, 0, format, RenderTextureReadWrite.Linear);
             //Debug.Log(FOW_RT.filterMode);
             //Debug.Log(FOW_RT.antiAliasing);
             //Debug.Log(FOW_RT.anisoLevel);
-            //FOW_RT.antiAliasing = FowTextureMsaa;
-            //FOW_RT.filterMode = FilterMode.Trilinear;
-            //FOW_RT.anisoLevel = 9;
-
-            FOW_RT.filterMode = FilterMode.Bilinear;
-            FOW_RT.anisoLevel = 1;
-            FOW_RT.useMipMap = false;
-            FOW_RT.antiAliasing = 1;
+            FOW_RT.antiAliasing = 8;
+            FOW_RT.filterMode = FilterMode.Trilinear;
+            FOW_RT.anisoLevel = 9;
             FOW_RT.Create();
             RenderTexture.active = FOW_RT;
-            //GL.Begin(GL.TRIANGLES);
-            GL.Clear(true, true, new Color(1 - InitialFogExplorationValue, 0, 0, 1 - InitialFogExplorationValue));
-
+            GL.Begin(GL.TRIANGLES);
+            GL.Clear(true, true, new Color(0, 0, 0, 1 - InitialFogExplorationValue));
+            GL.End();
+            if (UseMiniMap && UIImage != null)
+                UIImage.texture = FOW_RT;
             if (UseRegrow)
             {
                 FOW_TEMP_RT = new RenderTexture(FOW_RT);
@@ -1260,456 +1041,12 @@ namespace FOW
             RenderTexture.active = tmp;
         }
 
-        #endregion
-
-        #region All Bounds Stuff
-
-        public void UpdateWorldBounds(Vector3 center, Vector3 extent)
-        {
-            WorldBounds.center = center;
-            WorldBounds.extents = extent;
-            FowBoundsUpdated();
-        }
-
-        public void UpdateWorldBounds(Bounds newBounds)
-        {
-            WorldBounds = newBounds;
-            FowBoundsUpdated();
-        }
-
-        public static Vector4 CachedFowShaderBounds;
-        private void FowBoundsUpdated()
-        {
-            CachedFowShaderBounds = GetBoundsVectorForShader();
-            SetAllMaterialBounds();
-        }
-
-        private void SetAllMaterialBounds()
-        {
-            if (FogOfWarMaterial != null)
-                SetMaterialBounds(FogOfWarMaterial);
-
-            if (FowTextureMaterial != null)
-                SetMaterialBounds(FowTextureMaterial);
-        }
-
-        void SetMaterialBounds(Material mat)
-        {
-            //if (UseWorldBounds && FogOfWarMaterial != null)
-            if (mat != null)
-                mat.SetVector("_worldBounds", CachedFowShaderBounds);
-        }
-
-        public Vector4 GetBoundsVectorForShader()
-        {
-            if (is2D)
-                return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.y, WorldBounds.center.y);
-
-            switch(GamePlaneOrientation)
-            {
-                case GamePlane.XZ: return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.z, WorldBounds.center.z);
-                case GamePlane.XY: return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.y, WorldBounds.center.y);
-                case GamePlane.ZY: return new Vector4(WorldBounds.size.z, WorldBounds.center.z, WorldBounds.size.z, WorldBounds.center.z);
-            }
-
-            return new Vector4(WorldBounds.size.x, WorldBounds.center.x, WorldBounds.size.z, WorldBounds.center.z);
-        }
-
-        /// <summary>
-        /// Gets the world position of the provided point on the FOW plane
-        /// </summary>
-        public Vector2 GetFowBoundsPositionFromWorldPosition(Vector3 WorldPosition)
-        {
-            if (is2D)
-                return new Vector2(WorldPosition.x, WorldPosition.y);
-
-            switch (GamePlaneOrientation)
-            {
-                case GamePlane.XZ: return new Vector2(WorldPosition.x, WorldPosition.z);
-                case GamePlane.XY: return new Vector2(WorldPosition.x, WorldPosition.y);
-                case GamePlane.ZY: return new Vector2(WorldPosition.z, WorldPosition.y);
-            }
-
-            return new Vector2(WorldPosition.x, WorldPosition.z);
-        }
-
-        #endregion
-
-        #region Revealer Tracking
-
-        void SetNumRevealers()
-        {
-            //todo: switch to global int
-            if (FogOfWarMaterial != null)
-                SetNumRevealers(FogOfWarMaterial);
-            if (FowTextureMaterial != null)
-                SetNumRevealers(FowTextureMaterial);
-            foreach (PartialHider hider in PartialHiders)
-                SetNumRevealers(hider.HiderMaterial);
-        }
-
-        public void SetNumRevealers(Material material)
-        {
-            material.SetInt(numRevealersID, NumActiveRevealers);
-        }
-        
-        public int RegisterRevealer(FogOfWarRevealer newRevealer)
-        {
-#if UNITY_EDITOR
-            //RegisterRevealersProfileMarker.Begin();
-#endif
-            int emptySlotID = NumActiveRevealers;
-
-            NumActiveRevealers++;
-            if (!newRevealer.CurrentlyStaticRevealer)
-                numDynamicRevealers++;
-            SetNumRevealers();
-            
-            ActiveRevealers[emptySlotID] = newRevealer;
-            newRevealer.RevealerArrayPosition = emptySlotID;
-
-            int newID = emptySlotID;
-            if (numDeregisteredRevealers > 0)
-            {
-                numDeregisteredRevealers--;
-                newID = DeregisteredRevealerIDs[0];
-                DeregisteredRevealerIDs.RemoveAt(0);
-            }
-
-            indiciesDataToSet[0] = newID;
-            ActiveRevealerIndicesBuffer.SetData(indiciesDataToSet, 0, emptySlotID, 1);
-
-            //_circleIndicesArray = indicesBuffer.BeginWrite<int>(numCircles - 1, 1);
-            //_circleIndicesArray[0] = newID;
-
-            //indicesBuffer.EndWrite<int>(1);
-
-#if UNITY_EDITOR
-            //RegisterRevealersProfileMarker.End();
-#endif
-            UnsortedRevealers[newID] = newRevealer;
-            return newID;
-        }
-
-        public void DeRegisterRevealer(FogOfWarRevealer toRemove)
-        {
-#if UNITY_EDITOR
-            //DeRegisterRevealersProfileMarker.Begin();
-#endif
-            int index = toRemove.RevealerArrayPosition;
-
-            DeregisteredRevealerIDs.Add(toRemove.RevealerGPUDataPosition);
-            numDeregisteredRevealers++;
-
-            NumActiveRevealers--;
-            if (!toRemove.CurrentlyStaticRevealer)
-                numDynamicRevealers--;
-
-            FogOfWarRevealer toSwap = ActiveRevealers[NumActiveRevealers]; //the last revealer in the buffer
-            if (toSwap.RevealerArrayPosition != index) //put the LAST active revealer in this slot
-            {
-                //swap the array position
-                ActiveRevealers[index] = toSwap;
-                toSwap.RevealerArrayPosition = index;
-
-                //notify the gpu about the swap
-                indiciesDataToSet[0] = toSwap.RevealerGPUDataPosition;
-                ActiveRevealerIndicesBuffer.SetData(indiciesDataToSet, 0, index, 1);
-            }
-
-            SetNumRevealers();
-
-#if UNITY_EDITOR
-            //DeRegisterRevealersProfileMarker.End();
-#endif
-        }
-
-        public int RegisterHider(FogOfWarHider newHider)
-        {
-#if UNITY_EDITOR
-            //RegisterHiderProfileMarker.Begin();
-#endif
-            int emptySlotID = NumActiveHiders;
-
-            if (ActiveHiders.Length == emptySlotID)
-            {
-                Array.Resize(ref ActiveHiders, ActiveHiders.Length * 2);
-                Array.Resize(ref UnsortedHiders, UnsortedHiders.Length * 2);
-            }
-
-            NumActiveHiders++;
-
-            ActiveHiders[emptySlotID] = newHider;
-            newHider.HiderArrayPosition = emptySlotID;
-
-            int newID = emptySlotID;
-            if (numDeregisteredHiders > 0)
-            {
-                numDeregisteredHiders--;
-                newID = DeregisteredHiderIDs[0];
-                DeregisteredHiderIDs.RemoveAt(0);
-            }
-
-            UnsortedHiders[newID] = newHider;
-#if UNITY_EDITOR
-            //RegisterHiderProfileMarker.End();
-#endif
-            return newID;
-        }
-
-        public void DeRegisterHider(FogOfWarHider toRemove)
-        {
-#if UNITY_EDITOR
-            //DeRegisterHiderProfileMarker.Begin();
-#endif
-            int index = toRemove.HiderArrayPosition;
-
-            DeregisteredHiderIDs.Add(toRemove.HiderPermanantID);
-            numDeregisteredHiders++;
-
-            NumActiveHiders--;
-
-            FogOfWarHider toSwap = ActiveHiders[NumActiveHiders]; //the last hider in the buffer
-            if (toSwap.HiderArrayPosition != index) //put the LAST active hider in this slot
-            {
-                //swap the array position
-                ActiveHiders[index] = toSwap;
-                toSwap.HiderArrayPosition = index;
-            }
-
-#if UNITY_EDITOR
-            //DeRegisterHiderProfileMarker.End();
-#endif
-        }
-
-        #endregion
-
-        #region Shader Data Upload
-
-        private RevealerInfoStruct[] _revealerInfoToSet = new RevealerInfoStruct[1];
-        public void UpdateRevealerInfo(int id, RevealerInfoStruct info)
-        {
-            _revealerInfoToSet[0] = info;
-            RevealerInfoBuffer.SetData(_revealerInfoToSet, 0, id, 1);
-        }
-
-        //private JobHandle setAnglesBuffersJobHandle;
-        //private SetAnglesBuffersJob setAnglesBuffersJob;
-        //private NativeArray<ConeEdgeStruct> AnglesNativeArray;    //was used when using computebuffer.beginwrite. will be used again when unity fixes a bug internally
-        //private NativeArray<int> _circleIndicesArray;
-        //private NativeArray<CircleStruct> _circleArray;
-        //private NativeArray<ConeEdgeStruct> _angleArray;
-        private GpuSightSegment[] SightSegmentsUploadData;
-        private RevealerDataStruct[] _revealerDataToSet = new RevealerDataStruct[1];
-        public void UpdateRevealerData(int gpuPositionId, in RevealerDataStruct data, int numHits, float2[] directions, float[] distances)
-        {
-#if UNITY_EDITOR
-            UploadToGpuProfileMarker.Begin();
-#endif
-
-            UpdateRevealerDataLegacy(gpuPositionId, data, numHits, directions, distances);
-            //todo: replace UpdateRevealerDataLegacy with a batch updater (might require compute shader)
-
-#if UNITY_EDITOR
-            UploadToGpuProfileMarker.End();
-#endif
-        }
-
-        void UpdateRevealerDataLegacy(int gpuPositionId, in RevealerDataStruct data, int numHits, float2[] directions, float[] distances)
-        {
-            //setAnglesBuffersJobHandle.Complete();
-
-            _revealerDataToSet[0] = data;
-            RevealerDataBuffer.SetData(_revealerDataToSet, 0, gpuPositionId, 1);
-            //_circleArray = circleBuffer.BeginWrite<CircleStruct>(gpuPositionId, 1);
-            //_circleArray[0] = data;
-            //circleBuffer.EndWrite<CircleStruct>(1);
-
-            if (numHits == 0)
-                return;
-            else if (numHits > MaxPossibleSegmentsPerRevealer)
-            {
-                Debug.LogError($"the revealer is trying to register {numHits} segments. this is more than was set by maxPossibleSegmentsPerRevealer");
-                return;
-            }
-
-            for (int i = 0; i < numHits; i++)
-            {
-                ref var segment = ref SightSegmentsUploadData[i];
-                //segment.angle = radii[i];
-                segment.direction = directions[i];
-                segment.length = distances[i];
-            }
-
-            AnglesBuffer.SetData(SightSegmentsUploadData, 0, gpuPositionId * MaxPossibleSegmentsPerRevealer, numHits);
-            //the following lines of code should work in theory, however due to a unity bug, are going to be put on hold for a little bit.
-            //_angleArray = anglesBuffer.BeginWrite<ConeEdgeStruct>(gpuPositionId * maxPossibleSegmentsPerRevealer, radii.Length);
-            //setAnglesBuffersJob.AnglesArray = _angleArray;
-            //setAnglesBuffersJob.Angles = AnglesNativeArray;
-            //setAnglesBuffersJobHandle = setAnglesBuffersJob.Schedule(radii.Length, 128);
-            //setAnglesBuffersJobHandle.Complete();
-            //anglesBuffer.EndWrite<ConeEdgeStruct>(radii.Length);
-        }
-
-        void UpdateRevealerDataCompute()
-        {
-            //_stagingSegmentTotal += numHits;
-            //_stagingCount++;
-        }
-
-        [BurstCompile(CompileSynchronously = true)]
-        private struct SetAnglesBuffersJob : IJobParallelFor
-        {
-            [ReadOnly]
-            public NativeArray<GpuSightSegment> Angles;
-            [WriteOnly]
-            public NativeArray<GpuSightSegment> AnglesArray;
-
-            public void Execute(int index)
-            {
-                AnglesArray[index] = Angles[index];
-            }
-        }
-
-        public static void OnPreRenderFog()
-        {
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                return;
-#endif
-
-            if (SparseRevealerGrid.SpatialAccelerationActive && instance.FOWSamplingMode == FogSampleMode.Pixel_Perfect)
-                SparseRevealerGrid.FlattenAndUpload();
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Set the Global strength of FOW shaders. Range: 0-1
-        /// </summary>
-        public static void SetFowEffectStrength(float strength)
-        {
-            Shader.SetGlobalFloat(FowEffectStrengthID, strength);
-        }
-
-        /// <summary>
-        /// Translates world position to FOW texture UV
-        /// </summary>
-        public static float2 GetFowTextureUVFromWorldPosition(Vector3 WorldPosition)
-        {
-            var bounds = FogOfWarWorld.CachedFowShaderBounds;
-            float2 Position = instance.GetFowBoundsPositionFromWorldPosition(WorldPosition);
-            float2 uv = new Vector2((((Position.x - bounds.y) + (bounds.x / 2)) / bounds.x),
-                 (((Position.y - bounds.w) + (bounds.z / 2)) / bounds.z));
-
-            return uv;
-        }
-
-        /// <summary>
-        /// Test if provided point is currently visible.
-        /// </summary>
-        public static bool SampleFogTextureAtPoint(Vector3 WorldPosition)
-        {
-            float color = SampleFogTextureColorAtPoint(WorldPosition);
-
-            if (color > .5f)
-                return true;
-
-            return false;
-        }
-
-        /// <summary>
-        /// Samples the fog texture opacity at the given world position
-        /// </summary>
-        public static float SampleFogTextureColorAtPoint(Vector3 WorldPosition)
-        {
-            Vector2 uv = GetFowTextureUVFromWorldPosition(WorldPosition);
-
-            if (instance._asyncFogTextureReader != null && instance._asyncFogTextureReader.HasData && (instance.AsyncReadbackFogDataToCpu || NumActiveHiders != 0))
-                return 1 - instance._asyncFogTextureReader.SampleAsyncData(uv);
-
-            //Debug.Log("taking slow path");
-            Color color = SamplePixelSlow(FOW_RT, uv);
-
-            //white = see, black = not see
-            return 1 - color.r;
-        }
-
-        static Texture2D sampleTex;
-        private static Color SamplePixelSlow(RenderTexture rt, Vector2 uv)
-        {
-            if (rt == null) return Color.magenta;
-
-            int x = Mathf.Clamp((int)(uv.x * rt.width), 0, rt.width - 1);
-            int y = Mathf.Clamp((int)(uv.y * rt.height), 0, rt.height - 1);
-
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = rt;
-
-            if (sampleTex == null)
-                sampleTex = new Texture2D(1, 1, saveTextureFormat, false, true);
-            sampleTex.ReadPixels(new Rect(x, y, 1, 1), 0, 0, false);
-            sampleTex.Apply(false, false);
-
-            Color c = sampleTex.GetPixel(0, 0);
-
-            RenderTexture.active = previous;
-
-            return c;
-        }
-
-        /// <summary>
-        /// Test if provided point is currently visible.
-        /// </summary>
-        public static bool TestPointVisibility(Vector3 point)
-        {
-            if (instance.UseSpatialAcceleration)
-            {
-                Vector2 projectedPos = FogOfWarRevealer3D.Projection.Project(point);
-                int hash = SparseRevealerGrid.GetCellHash(projectedPos);
-                for (int i = 0; i < SparseRevealerGrid.RevealerBucketCounts[hash]; i++)
-                {
-                    if (UnsortedRevealers[SparseRevealerGrid.RevealerBuckets[hash][i]].TestPoint(point))
-                        return true;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < NumActiveRevealers; i++)
-                {
-                    if (ActiveRevealers[i].TestPoint(point))
-                        return true;
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Change the fog appearence type at runtime
-        /// </summary>
-        public void SetFowAppearance(FogOfWarAppearance AppearanceMode)
-        {
-            FogAppearance = AppearanceMode;
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                return;
-#endif
-
-            enabled = false;
-            enabled = true;
-        }
-
-        public FogOfWarAppearance GetFowAppearance()
-        {
-            return FogAppearance;
-        }
-
         /// <summary>
         /// Retuns a byte array that you can save to a file
         /// </summary>
         public byte[] GetFowTextureSaveData()
         {
-            var tex = new Texture2D(FOW_RT.width, FOW_RT.height, saveTextureFormat, mipChain: false, linear: true);
+            var tex = new Texture2D(FOW_RT.width, FOW_RT.height, TextureFormat.RGBAHalf, mipChain: false, linear: true);
 
             var tmp = RenderTexture.active;
 
@@ -1731,455 +1068,717 @@ namespace FOW
         {
             ClearFowTexture();
 
-            Texture2D temp = new Texture2D(1, 1, saveTextureFormat, mipChain: false, linear: true);
+            Texture2D temp = new Texture2D(1, 1, TextureFormat.RGBAHalf, mipChain: false, linear: true);
             temp.LoadImage(save);
 
             Graphics.Blit(temp, FOW_RT);
         }
     }
-
-    //this class revealers hiders based off the FOW texture, instead of using revealers directly
-    public sealed class AsyncFogTextureReader : IDisposable
-    {
-        public bool HasData;
-        public HiderRevealer HiderSeeker;
-        public float HiderSeeingThreshold = .5f;
-
-        NativeArray<half> _front;
-        NativeArray<half> _back;
-        int _w, _h;
-        bool _requestPending;
-        AsyncGPUReadbackRequest _request;
-
-        public AsyncFogTextureReader()
-        {
-            HiderSeeker = new HiderRevealer();
-        }
-
-        public void Update(RenderTexture rt)
-        {
-            if (rt == null) return;
-
-            if (!_front.IsCreated || _w != rt.width || _h != rt.height)
-            {
-                if (_requestPending)
-                {
-                    _request.WaitForCompletion();
-                    _requestPending = false;
-                }
-                Resize(rt.width, rt.height);
-            }
-
-            if (_requestPending && _request.done)
-            {
-                _requestPending = false;
-
-                if (!_request.hasError)
-                {
-                    (_front, _back) = (_back, _front); //swap front and back
-                    HasData = true;
-                }
-            }
-
-            if (!_requestPending)
-            {
-                //_request = AsyncGPUReadback.RequestIntoNativeArray(ref _back, rt, 0);
-                _request = AsyncGPUReadback.RequestIntoNativeArray(
-                    ref _back,
-                    rt,
-                    0,
-                    FogOfWarWorld.saveTextureFormat);
-                _requestPending = true;
-            }
-        }
-
-        public void SeekHiders()
-        {
-            if (FogOfWarWorld.NumActiveHiders == 0)
-                return;
-
-            if (!HasData) return;
-
-            for (int i = 0; i < FogOfWarWorld.NumActiveHiders; i++)
-            {
-                FogOfWarHider hider = FogOfWarWorld.ActiveHiders[i];
-                bool seen = CanSeeHider(hider);
-                HiderSeeker.ProcessSeen(hider, seen);
-            }
-        }
-
-        bool CanSeeHider(FogOfWarHider hider)
-        {
-            var bounds = FogOfWarWorld.CachedFowShaderBounds;
-
-            for (int i = 0; i < hider.SamplePoints.Length; i++)
-            {
-                float3 worldPos = hider.SamplePoints[i].position;
-                float2 uv = FogOfWarWorld.GetFowTextureUVFromWorldPosition(worldPos);
-
-                float sample = SampleAsyncData(uv);
-                if (sample < HiderSeeingThreshold)
-                    return true;
-            }
-
-            return false;
-        }
-
-        public half SampleAsyncData(float2 uv)
-        {
-            //uv.y = 1 - uv.y;
-
-            int x = Mathf.Clamp((int)(uv.x * _w), 0, _w - 1);
-            int y = Mathf.Clamp((int)(uv.y * _h), 0, _h - 1);
-
-            return _front[y * _w + x];
-        }
-
-        void Resize(int w, int h)
-        {
-            if (_front.IsCreated) _front.Dispose();
-            if (_back.IsCreated) _back.Dispose();
-
-            _w = w;
-            _h = h;
-            int size = w * h;
-            _front = new NativeArray<half>(size, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            _back = new NativeArray<half>(size, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            HasData = false;
-        }
-
-        public void UnseeAllHiders()
-        {
-            HiderSeeker.ClearRevealedList();
-        }
-
-        public void Dispose()
-        {
-            HiderSeeker?.ClearRevealedList();
-            if (_requestPending)
-            {
-                _request.WaitForCompletion();
-                _requestPending = false;
-            }
-
-            if (_front.IsCreated) _front.Dispose();
-            if (_back.IsCreated) _back.Dispose();
-            HasData = false;
-        }
-    }
-
-    public static class SparseRevealerGrid
-    {
-        public static bool SpatialAccelerationActive = false;
-        public static List<int>[] RevealerBuckets; //each bucket has a list of revealer ids
-        public static int[] RevealerBucketCounts;  //cached bucket counts
-        public static List<int>[] HiderBuckets;
-        public static int[] HiderBucketCounts;
-
-        public static bool Dirty;
-
-        //static List<int> _activeBuckets = new List<int>();
-        static int _totalEntries = 0;
-        private static HashSet<int> _tempHashes = new HashSet<int>();
-
-        static int _tableSize = 512;
-        static int _cellSize = 32;
-
-        static ComputeBuffer _gridRangesBuffer;
-        static ComputeBuffer _revealerGridIdsBuffer;
-
-        static int2[] _ranges;
-        static int[] _revealerGridIds;
-        static int _maxGridIds;
-
-        public static void Initialize(int tableSize, int cellSize)
-        {
-            SpatialAccelerationActive = true;
-            _tableSize = tableSize;
-            _cellSize = cellSize;
-
-            RevealerBuckets = new List<int>[_tableSize];
-            RevealerBucketCounts = new int[_tableSize];
-
-            HiderBuckets = new List<int>[_tableSize];
-            HiderBucketCounts = new int[_tableSize];
-            
-            for (int i = 0; i < _tableSize; i++)
-            {
-                RevealerBuckets[i] = new List<int>();
-                HiderBuckets[i] = new List<int>();
-            }
-
-            _maxGridIds = FogOfWarWorld.instance.MaxPossibleRevealers * 4;  //it will automatically resize if needed
-            _ranges = new int2[_tableSize];
-            _revealerGridIds = new int[_maxGridIds];
-
-            _gridRangesBuffer = new ComputeBuffer(_tableSize, sizeof(int) * 2);
-            _revealerGridIdsBuffer = new ComputeBuffer(_maxGridIds, sizeof(int));
-
-            FogOfWarWorld.instance.BindSpatialHashComputeBuffersToAllMaterials();
-        }
-
-        public static void Cleanup()
-        {
-            SpatialAccelerationActive = false;
-
-            if (FogOfWarWorld.ActiveRevealers != null)
-            {
-                for (int i = 0; i < FogOfWarWorld.NumActiveRevealers; i++)
-                    FogOfWarWorld.ActiveRevealers[i].SpatialHashBuckets.Clear();
-            }
-            if (FogOfWarWorld.ActiveHiders != null)
-            {
-                for (int i = 0; i < FogOfWarWorld.NumActiveHiders; i++)
-                    FogOfWarWorld.ActiveHiders[i].SpatialHashBuckets.Clear();
-            }
-
-            _gridRangesBuffer?.Dispose();
-            _revealerGridIdsBuffer?.Dispose();
-            _gridRangesBuffer = null;
-            _revealerGridIdsBuffer = null;
-            _totalEntries = 0;
-        }
-
-        public static int2 GetCell(float2 position)
-        {
-            return new int2(
-                (int)math.floor(position.x / _cellSize),
-                (int)math.floor(position.y / _cellSize)
-            );
-        }
-
-        public static int GetCellHash(int2 cell)
-        {
-            uint h = (uint)cell.x * 73856093u ^ (uint)cell.y * 19349663u;
-            return (int)(h % (uint)_tableSize);
-        }
-
-        public static int GetCellHash(float2 position)
-        {
-            int2 cell = GetCell(position);
-
-            return GetCellHash(cell);
-        }
-
-        private static void SwapRemove(List<int> list, int item)    //order doesnt matter for revealer buckets and this is slightly faster than regular remove
-        {
-            int index = list.IndexOf(item);
-            if (index < 0) return;
-
-            list[index] = list[list.Count - 1];
-            list.RemoveAt(list.Count - 1);
-        }
-
-        public static void UpdateRevealerBuckets(FogOfWarRevealer revealer, float2 position)
-        {
-            if (!SpatialAccelerationActive)
-                return;
-
-            //add revealer to new buckets based off revealer sight angle, radius, position, and facing direction (could also use first/last sight angle direction idk)
-            int2 minCell = GetCell(position - revealer.TotalRevealerRadius);
-            int2 maxCell = GetCell(position + revealer.TotalRevealerRadius);
-
-            if (revealer.MinBucket.x == minCell.x && revealer.MinBucket.y == minCell.y &&
-                revealer.MaxBucket.x == maxCell.x && revealer.MaxBucket.y == maxCell.y)
-                return;
-
-            revealer.MinBucket = minCell;
-            revealer.MaxBucket = maxCell;
-
-            for (int i = 0; i < revealer.SpatialHashBuckets.Count; i++)
-            {
-                int hash = revealer.SpatialHashBuckets[i];
-                SwapRemove(RevealerBuckets[hash], revealer.RevealerGPUDataPosition);
-                //RevealerBuckets[hash].Remove(revealer.RevealerGPUDataPosition);
-                RevealerBucketCounts[hash]--;
-                _totalEntries--;
-                //if (BucketCounts[hash] == 0)
-                //    _activeBuckets.Remove(hash);
-            }
-            revealer.SpatialHashBuckets.Clear();
-            _tempHashes.Clear();
-
-            for (int y = minCell.y; y <= maxCell.y; y++)
-            {
-                for (int x = minCell.x; x <= maxCell.x; x++)
-                {
-                    int hash = GetCellHash(new int2(x, y));
-
-                    if (!_tempHashes.Add(hash))
-                        continue;
-
-                    //if (BucketCounts[hash] == 0)
-                    //    _activeBuckets.Add(hash);
-
-                    RevealerBuckets[hash].Add(revealer.RevealerGPUDataPosition);
-                    RevealerBucketCounts[hash]++;
-                    _totalEntries++;
-                    revealer.SpatialHashBuckets.Add(hash);
-                }
-            }
-            Dirty = true;
-        }
-
-        public static void RemoveRevealer(FogOfWarRevealer revealer)
-        {
-            for (int i = 0; i < revealer.SpatialHashBuckets.Count; i++)
-            {
-                int hash = revealer.SpatialHashBuckets[i];
-                //RevealerBuckets[hash].Remove(revealer.RevealerGPUDataPosition);
-                SwapRemove(RevealerBuckets[hash], revealer.RevealerGPUDataPosition);
-                RevealerBucketCounts[hash]--;
-            }
-            revealer.SpatialHashBuckets.Clear();
-            Dirty = true;
-        }
-
-        public static void UpdatHiderBuckets(FogOfWarHider hider, float2 position)
-        {
-            if (!SpatialAccelerationActive)
-                return;
-
-            //add hider to new buckets based off his SAMPLE POSITIONS
-            int2 minCell = GetCell(position - hider.MaxSamplePointLocalPosition);
-            int2 maxCell = GetCell(position + hider.MaxSamplePointLocalPosition);
-
-            if (hider.MinBucket.x == minCell.x && hider.MinBucket.y == minCell.y &&
-                hider.MaxBucket.x == maxCell.x && hider.MaxBucket.y == maxCell.y)
-                return;
-
-            hider.MinBucket = minCell;
-            hider.MaxBucket = maxCell;
-
-
-            for (int i = 0; i < hider.SpatialHashBuckets.Count; i++)
-            {
-                int hash = hider.SpatialHashBuckets[i];
-                SwapRemove(HiderBuckets[hash], hider.HiderPermanantID);
-                HiderBucketCounts[hash]--;
-                _totalEntries--;
-            }
-            hider.SpatialHashBuckets.Clear();
-            _tempHashes.Clear();
-
-            for (int y = minCell.y; y <= maxCell.y; y++)
-            {
-                for (int x = minCell.x; x <= maxCell.x; x++)
-                {
-                    int hash = GetCellHash(new int2(x, y));
-
-                    if (!_tempHashes.Add(hash))
-                        continue;
-
-                    HiderBuckets[hash].Add(hider.HiderPermanantID);
-                    HiderBucketCounts[hash]++;
-                    _totalEntries++;
-                    hider.SpatialHashBuckets.Add(hash);
-                }
-            }
-
-            return;
-        }
-
-        public static void RemoveHider(FogOfWarHider hider)
-        {
-            for (int i = 0; i < hider.SpatialHashBuckets.Count; i++)
-            {
-                int hash = hider.SpatialHashBuckets[i];
-                //HiderBuckets[hash].Remove(hider.HiderPermanantID);
-                SwapRemove(HiderBuckets[hash], hider.HiderPermanantID);
-                HiderBucketCounts[hash]--;
-            }
-            hider.SpatialHashBuckets.Clear();
-        }
-
+    
 #if UNITY_EDITOR
-        static readonly ProfilerMarker FlattenProfileMarker = new ProfilerMarker("Spatial Hash Flatten + Upload");
-#endif
-        public static void FlattenAndUpload()
+    [CustomEditor(typeof(FogOfWarWorld))]
+    public class FogOfWarWorldEditor : Editor
+    {
+        static class Styles
         {
-            if (!Dirty)
-                return;
-
-#if UNITY_EDITOR
-            FlattenProfileMarker.Begin();
-#endif
-            Dirty = false;
-
-            #region check if we need to resize the grid id buffer
-
-            //int totalEntries = 0;
-            //for (int i = 0; i < _activeBuckets.Count; i++)
-            //    totalEntries += BucketCounts[_activeBuckets[i]];
-
-            if (_totalEntries > _maxGridIds)
+            public static readonly GUIStyle rightLabel = new GUIStyle("RightLabel");
+        }
+        string[] FogUpdateMethods = new string[]
+        {
+            "Update", "Late Update"
+        };
+        string[] FowSampleOptions = new string[]
+        {
+            "Pixel-Perfect", "Texture Storage"
+            //"Pixel-Perfect", "Texture", "Both"
+        };
+        string[] FogTypeOptions = new string[]
+        {
+            //"No Bleed", "No Bleed Soft", "Hard", "Soft"
+            "Hard", "Soft"
+        };
+        string[] FogAppearanceOptions = new string[]
+        {
+            "Solid Color", "Gray Scale", "Blur", "Texture Color", "Outline (BETA)", "None - MiniMap Only"
+        };
+        string[] FogFadeOptions = new string[]
+        {
+            "Linear", "Exponential", "Smooth", "Smoother", "Smooth Step"
+        };
+        string[] FogBlendOptions = new string[]
+        {
+            "Maximum", "Additive"
+        };
+        string[] RevealerModeOptions = new string[]
+        {
+            "Every Frame", "N Per Frame", "Controlled Elsewhere"
+        };
+        string[] GamePlaneOptions = new string[]
+        {
+            "XZ", "XY", "ZY"
+        };
+        private BoxBoundsHandle m_BoundsHandle = new BoxBoundsHandle();
+        void OnSceneGUI()
+        {
+            FogOfWarWorld fow = (FogOfWarWorld)target;
+            if (fow.UseWorldBounds || fow.UseMiniMap || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Texture || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Both)
             {
-                _maxGridIds = _totalEntries * 2;
-                _revealerGridIds = new int[_maxGridIds];
-                _revealerGridIdsBuffer?.Dispose();
-                _revealerGridIdsBuffer = new ComputeBuffer(_maxGridIds, sizeof(int));
+                m_BoundsHandle.center = fow.WorldBounds.center;
+                m_BoundsHandle.size = fow.WorldBounds.size;
 
-                FogOfWarWorld.instance.BindSpatialHashComputeBuffersToAllMaterials();   //rebind after resizing
+                EditorGUI.BeginChangeCheck();
+                m_BoundsHandle.DrawHandle();
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(fow, "Change Bounds");
+
+                    Bounds newBounds = new Bounds();
+                    newBounds.center = m_BoundsHandle.center;
+                    newBounds.size = m_BoundsHandle.size;
+                    fow.UpdateWorldBounds(newBounds);
+                    //fow.WorldBounds = newBounds;
+                }
+            }
+        }
+        public override void OnInspectorGUI()
+        {
+            //DrawDefaultInspector();
+            FogOfWarWorld fow = (FogOfWarWorld)target;
+
+            FogOfWarWorld.FowUpdateMethod updateMethod = fow.UpdateMethod;
+            int selected = (int)updateMethod;
+            selected = EditorGUILayout.Popup("Update Method", selected, FogUpdateMethods);
+            updateMethod = (FogOfWarWorld.FowUpdateMethod)selected;
+            if (fow.UpdateMethod != updateMethod)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.UpdateMethod = updateMethod;
+                fow.UpdateAllMaterialProperties();
             }
 
-            #endregion
-
-            // Flatten
-            int writeIndex = 0;
-            for (int i = 0; i < _tableSize; i++)
+            EditorGUILayout.LabelField("Customization Options:");
+            FogOfWarWorld.FogOfWarType fogType = fow.FogType;
+            selected = (int)fogType;
+            selected = EditorGUILayout.Popup("Fog Type", selected, FogTypeOptions);
+            fogType = (FogOfWarWorld.FogOfWarType)selected;
+            if (fow.FogType != fogType)
             {
-                int count = RevealerBucketCounts[i];
-                _ranges[i] = new int2(writeIndex, writeIndex + count);
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.FogType = fogType;
+                fow.UpdateAllMaterialProperties();
+            }
+            //if (fow.FogType == FogOfWarWorld.FogOfWarType.No_Bleed_Soft || fow.FogType == FogOfWarWorld.FogOfWarType.Soft)
+            if (fow.FogType == FogOfWarWorld.FogOfWarType.Soft)
+            {
+                EditorGUILayout.LabelField("---Soft Fog Options---");
+                FogOfWarWorld.FogOfWarFadeType fadeType = fow.FogFade;
+                selected = (int)fadeType;
+                selected = EditorGUILayout.Popup("Fade Type", selected, FogFadeOptions);
+                fadeType = (FogOfWarWorld.FogOfWarFadeType)selected;
+                if (fow.FogFade != fadeType)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.FogFade = fadeType;
+                    fow.UpdateAllMaterialProperties();
+                }
+                if (fadeType == FogOfWarWorld.FogOfWarFadeType.Exponential)
+                {
+                    float fadeExp = fow.FogFadePower;
+                    float newfadeExp = EditorGUILayout.FloatField("Fade Exponent: ", fadeExp);
+                    if (fadeExp != newfadeExp)
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.FogFadePower = newfadeExp;
+                        fow.UpdateAllMaterialProperties();
+                    }
+                }
+                FogOfWarWorld.FogOfWarBlendMode blendType = fow.BlendType;
+                selected = (int)blendType;
+                //selected = EditorGUILayout.Popup("Blend Type", selected, FogBlendOptions);
+                selected = EditorGUILayout.Popup("Revealer Combination Mode", selected, FogBlendOptions);
+                blendType = (FogOfWarWorld.FogOfWarBlendMode)selected;
+                if (fow.BlendType != blendType)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.BlendType = blendType;
+                    fow.UpdateAllMaterialProperties();
+                }
 
-                var bucket = RevealerBuckets[i];
-                //if (count > 1)
+                //float softenDist = fow.SoftenDistance;
+                //float newSoftenDist = EditorGUILayout.FloatField("Soften Distance: ", softenDist);
+                //if (newSoftenDist != softenDist)
                 //{
-                //    //this can help improve cache locality, which can make the shader code a bit faster on the gpu. i need to test this more so ill leave it commented for now
-                //    //bucket.Sort();
-                //    InsertionSort(bucket);
+                //    fow.SoftenDistance = newSoftenDist;
+                //    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                //    fow.UpdateFogConfig();
                 //}
 
-                for (int j = 0; j < count; j++)
-                    _revealerGridIds[writeIndex++] = bucket[j];
-            }
-
-            // Upload
-            _gridRangesBuffer.SetData(_ranges);
-            if (_totalEntries > 0)
-                _revealerGridIdsBuffer.SetData(_revealerGridIds, 0, 0, _totalEntries);
-
-#if UNITY_EDITOR
-            FlattenProfileMarker.End();
-#endif
-        }
-
-        private static void InsertionSort(List<int> list)
-        {
-            for (int i = 1; i < list.Count; i++)
-            {
-                int key = list[i];
-                int j = i - 1;
-
-                while (j >= 0 && list[j] > key)
+                float unobscuredsoftenDist = fow.UnobscuredSoftenDistance;
+                float newUnobscuredSoftenDist = EditorGUILayout.FloatField("Un-Obscured area Soften Distance: ", unobscuredsoftenDist);
+                if (!Mathf.Approximately(newUnobscuredSoftenDist, unobscuredsoftenDist))
                 {
-                    list[j + 1] = list[j];
-                    j--;
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UnobscuredSoftenDistance = Mathf.Max(0, newUnobscuredSoftenDist);
+                    fow.UpdateAllMaterialProperties();
                 }
-                list[j + 1] = key;
+
+                bool innerSoften = fow.UseInnerSoften;
+                bool newinnerSoften = EditorGUILayout.Toggle("Soften Inner Edge? (BETA!)", innerSoften);
+                if (newinnerSoften != innerSoften)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UseInnerSoften = newinnerSoften;
+                    fow.UpdateAllMaterialProperties();
+                }
+                if (newinnerSoften)
+                {
+                    float softenAng = fow.InnerSoftenAngle;
+                    float newSoftenAng = EditorGUILayout.FloatField("Inner Soften Angle: ", softenAng);
+                    if (!Mathf.Approximately(newSoftenAng, softenAng))
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.InnerSoftenAngle = Mathf.Max(0, newSoftenAng);
+                        fow.UpdateAllMaterialProperties();
+                    }
+                }
+
+                bool ditherFog = fow.UseDithering;
+                bool newDithering = EditorGUILayout.Toggle("Use Dithering?", ditherFog);
+                if (newDithering != ditherFog)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UseDithering = newDithering;
+                    fow.UpdateAllMaterialProperties();
+                }
+                if (newDithering)
+                {
+                    float ditherSize = fow.DitherSize;
+                    float newDitherSize = EditorGUILayout.FloatField("Dithering Size: ", ditherSize);
+                    if (!Mathf.Approximately(newDitherSize, ditherSize))
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.DitherSize = Mathf.Max(0, newDitherSize);
+                        fow.UpdateAllMaterialProperties();
+                    }
+                }
+
+                EditorGUILayout.LabelField("------");
             }
-        }
 
-        public static bool CheckIntersection(int2 minBucket1, int2 maxBucket1, int2 minBucket2, int2 maxBucket2)
-        {
-            return math.all(maxBucket1 >= minBucket2) & math.all(minBucket1 <= maxBucket2);
-        }
+            bool AllowBleeding = fow.AllowBleeding;
+            bool newAllowBleeding = EditorGUILayout.Toggle("Allow Bleeding?", AllowBleeding);
+            if (newAllowBleeding != AllowBleeding)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.AllowBleeding = newAllowBleeding;
+                fow.UpdateAllMaterialProperties();
+            }
 
-        public static void BindPropertiesToMaterial(Material material)
-        {
-            material.SetBuffer("_GridRanges", _gridRangesBuffer);
-            material.SetBuffer("_RevealerGridIds", _revealerGridIdsBuffer);
-            material.SetInt("_TableSize", _tableSize);
-            material.SetFloat("_CellSize", _cellSize);
+            float oldExtraSightAmount = fow.SightExtraAmount;
+            float newExtraSightAmount = EditorGUILayout.Slider("Revealer Extra Sight Distance: ", oldExtraSightAmount, -.01f, 1);
+            if (!Mathf.Approximately(oldExtraSightAmount, newExtraSightAmount))
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.SightExtraAmount = newExtraSightAmount;
+                fow.UpdateAllMaterialProperties();
+            }
+
+            if (fow.FogType == FogOfWarWorld.FogOfWarType.Soft)
+            {
+                float EdgeSoftenDistance = fow.EdgeSoftenDistance;
+                //float newEdgeSoftenDist = EditorGUILayout.FloatField("Edge Softening Distance: ", EdgeSoftenDistance);
+                float newEdgeSoftenDist = EditorGUILayout.FloatField("Revealer Extra Sight Distance Softening: ", EdgeSoftenDistance);
+                if (!Mathf.Approximately(newEdgeSoftenDist, EdgeSoftenDistance))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.EdgeSoftenDistance = Mathf.Max(0, newEdgeSoftenDist);
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+
+            float oldMaxDist = fow.MaxFogDistance;
+            float newMaxDist = EditorGUILayout.Slider("Max Fog Distance: ", oldMaxDist, 0, 10000);
+            if (!Mathf.Approximately(oldMaxDist, newMaxDist))
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.MaxFogDistance = newMaxDist;
+                fow.UpdateAllMaterialProperties();
+            }
+
+            bool pixelate = fow.PixelateFog;
+            bool newpixelate = EditorGUILayout.Toggle("Pixelate Fog?", pixelate);
+            if (newpixelate != pixelate)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.PixelateFog = newpixelate;
+                fow.UpdateAllMaterialProperties();
+            }
+            if (newpixelate)
+            {
+                bool WSpixelate = fow.WorldSpacePixelate;
+                bool newWSpixelate = EditorGUILayout.Toggle("- Use World Space?", WSpixelate);
+                if (newWSpixelate != WSpixelate)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.WorldSpacePixelate = newWSpixelate;
+                    fow.UpdateAllMaterialProperties();
+                }
+                float oldPixelateSize = fow.PixelDensity;
+                float newPixelateSize = EditorGUILayout.FloatField("- Pixel Density: ", oldPixelateSize);
+                if (!Mathf.Approximately(newPixelateSize, oldPixelateSize))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.PixelDensity = Mathf.Max(0, newPixelateSize);
+                    //Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UpdateAllMaterialProperties();
+                }
+                bool roundRevPos = fow.RoundRevealerPosition;
+                bool newRoundRevPos = EditorGUILayout.Toggle("- Round Revealer Position?", roundRevPos);
+                if (newRoundRevPos != roundRevPos)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.RoundRevealerPosition = newRoundRevPos;
+                    fow.UpdateAllMaterialProperties();
+                }
+                Vector2 oldOffset = fow.PixelGridOffset;
+                Vector2 newOffset = EditorGUILayout.Vector2Field("- Pixel Grid Offset: ", oldOffset);
+                newOffset = new Vector2(Mathf.Clamp(newOffset.x, -.5f, .5f), Mathf.Clamp(newOffset.y, -.5f, .5f));
+                if (oldOffset != newOffset)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.PixelGridOffset = newOffset;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+
+            bool invertEffect = fow.InvertFowEffect;
+            bool newInvertEffect = EditorGUILayout.Toggle("Invert Fow Effect?", invertEffect);
+            if (newInvertEffect != invertEffect)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.InvertFowEffect = newInvertEffect;
+                fow.UpdateAllMaterialProperties();
+            }
+
+            EditorGUILayout.Space(20);
+            EditorGUILayout.LabelField("------------------");
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("FOW Rendering Options:");
+
+            FogOfWarWorld.FogOfWarAppearance fogAppearance = fow.GetFowAppearance();
+            selected = (int)fogAppearance;
+            selected = EditorGUILayout.Popup("Fog Appearance", selected, FogAppearanceOptions);
+            fogAppearance = (FogOfWarWorld.FogOfWarAppearance)selected;
+            if (fow.GetFowAppearance() != fogAppearance)
+            {
+                //fow.FogAppearance = fogAppearance;
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.SetFowAppearance(fogAppearance);
+            }
+
+            if (fow.GetFowAppearance() != FogOfWarWorld.FogOfWarAppearance.None)
+            {
+                Color unknownColor = fow.UnknownColor;
+                Color newColor = EditorGUILayout.ColorField("Unknown Area Color: ", unknownColor);
+                if (unknownColor != newColor)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UnknownColor = newColor;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+            if (fow.GetFowAppearance() == FogOfWarWorld.FogOfWarAppearance.Solid_Color)
+            {
+
+            }
+            else if (fow.GetFowAppearance() == FogOfWarWorld.FogOfWarAppearance.GrayScale)
+            {
+
+                float oldStrength = fow.SaturationStrength;
+                float newStrength = EditorGUILayout.Slider("Unknown Area Saturation Strength: ", oldStrength, 0, 1);
+                if (!Mathf.Approximately(oldStrength, newStrength))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.SaturationStrength = newStrength;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+            else if (fow.GetFowAppearance() == FogOfWarWorld.FogOfWarAppearance.Blur)
+            {
+                float oldBlur = fow.BlurStrength;
+                float newBlur = EditorGUILayout.Slider("Unknown Area Blur Strength: ", oldBlur, -1, 1);
+                if (!Mathf.Approximately(oldBlur, newBlur))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.BlurStrength = newBlur;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                //float oldBlurOffset = fow.blurPixelOffset;
+                //float newBlurOffset = EditorGUILayout.Slider("Unknown Area Blur Pixel Offset: ", oldBlurOffset, 1.5f, 10);
+                //if (oldBlurOffset != newBlurOffset)
+                //{
+                //    fow.blurPixelOffset = newBlurOffset;
+                //    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                //    fow.updateFogConfiguration();
+                //}
+                float oldBlurOffset = fow.BlurDistanceScreenPercentMin;
+                float newBlurOffset = EditorGUILayout.Slider("Min Screen Percent: ", oldBlurOffset, 0, 2);
+                if (!Mathf.Approximately(oldBlurOffset, newBlurOffset))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.BlurDistanceScreenPercentMin = newBlurOffset;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                oldBlurOffset = fow.BlurDistanceScreenPercentMax;
+                newBlurOffset = EditorGUILayout.Slider("Max Screen Percent: ", oldBlurOffset, 0, 2);
+                if (oldBlurOffset != newBlurOffset)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.BlurDistanceScreenPercentMax = newBlurOffset;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                int oldBlurSamples = fow.BlurSamples;
+                int newBlurSamples = EditorGUILayout.IntSlider("Num Blur Samples: ", oldBlurSamples, 6, 18);
+                if (oldBlurSamples != newBlurSamples)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.BlurSamples = newBlurSamples;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+            else if (fow.GetFowAppearance() == FogOfWarWorld.FogOfWarAppearance.Texture_Sample)
+            {
+                Texture2D oldTexture = fow.FogTexture;
+                Texture2D newTexture = (Texture2D)EditorGUILayout.ObjectField("Fog Of War Texture: ", oldTexture, typeof(Texture2D), false);
+                if (newTexture != oldTexture)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.FogTexture = newTexture;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                bool useTriplanar = fow.UseTriplanar;
+                bool newUseTriplanar = EditorGUILayout.Toggle("Use Triplanar Sampling?", useTriplanar);
+                //bool newUseBounds = false;
+                if (useTriplanar != newUseTriplanar)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UseTriplanar = newUseTriplanar;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                Vector2 oldTiling = fow.FogTextureTiling;
+                Vector2 newTiling = EditorGUILayout.Vector2Field("Texture Tiling: ", oldTiling);
+                if (oldTiling != newTiling)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.FogTextureTiling = newTiling;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                Vector2 oldSpeed = fow.FogScrollSpeed;
+                Vector2 newSpeed = EditorGUILayout.Vector2Field("Texture Scroll Speed: ", oldSpeed);
+                if (oldSpeed != newSpeed)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.FogScrollSpeed = newSpeed;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+            else if (fow.GetFowAppearance() == FogOfWarWorld.FogOfWarAppearance.Outline)
+            {
+                float oldThickness = fow.OutlineThickness;
+                float newThickness = EditorGUILayout.FloatField("Outline Thickness: ", oldThickness);
+                if (!Mathf.Approximately(oldThickness, newThickness))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.OutlineThickness = newThickness;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+
+            EditorGUILayout.Space(20);
+            EditorGUILayout.LabelField("------------------");
+            EditorGUILayout.Space(20);
+
+            FogOfWarWorld.FogSampleMode sampleMode = fow.FOWSamplingMode;
+            selected = (int)sampleMode;
+            selected = EditorGUILayout.Popup("Fog Sample Mode", selected, FowSampleOptions);
+            sampleMode = (FogOfWarWorld.FogSampleMode)selected;
+            if (fow.FOWSamplingMode != sampleMode)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.FOWSamplingMode = sampleMode;
+                fow.UpdateAllMaterialProperties();
+            }
+            if (fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Texture || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Both)
+            {
+                EditorGUILayout.LabelField("Texture Sampling Mode Options:");
+                bool useConstantBlur = fow.UseConstantBlur;
+                bool newUseConstantBlur = EditorGUILayout.Toggle("--Use Blur?", useConstantBlur);
+                //bool newUseBounds = false;
+                if (useConstantBlur != newUseConstantBlur)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UseConstantBlur = newUseConstantBlur;
+                    fow.UpdateAllMaterialProperties();
+                }
+                if (newUseConstantBlur)
+                {
+                    int oldCBlurQual = fow.ConstantTextureBlurQuality;
+                    int newCBlurQual = EditorGUILayout.IntSlider("--Texture Blur Quality: ", oldCBlurQual, 1, 6);
+                    if (oldCBlurQual != newCBlurQual)
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.ConstantTextureBlurQuality = newCBlurQual;
+                        fow.UpdateAllMaterialProperties();
+                    }
+                    float oldCBlurAmmount = fow.ConstantTextureBlurAmount;
+                    float newCBlurAmount = EditorGUILayout.Slider("--Texture Blur Amount: ", oldCBlurAmmount, 0, 5);
+                    if (!Mathf.Approximately(oldCBlurAmmount, newCBlurAmount))
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.ConstantTextureBlurAmount = newCBlurAmount;
+                        fow.UpdateAllMaterialProperties();
+                    }
+                }
+
+                EditorGUILayout.Space(20);
+            }
+
+            bool useWorldBounds = fow.UseWorldBounds;
+            bool newUseBounds = EditorGUILayout.Toggle("Use World Bounds?", useWorldBounds);
+            //bool newUseBounds = false;
+            if (useWorldBounds != newUseBounds)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.UseWorldBounds = newUseBounds;
+                fow.UpdateAllMaterialProperties();
+            }
+            if (newUseBounds)
+            {
+                float boundSoftendistance = fow.WorldBoundsSoftenDistance;
+                float newboundSoftendistance = EditorGUILayout.Slider("--World Bounds Soften Distance:", boundSoftendistance, 0, 5);
+                if (!Mathf.Approximately(boundSoftendistance, newboundSoftendistance))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.WorldBoundsSoftenDistance = newboundSoftendistance;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                float boundsInfluence = fow.WorldBoundsInfluence;
+                float newboundsInfluence = EditorGUILayout.Slider("--World Bounds Influence:", boundsInfluence, 0, 1);
+                if (!Mathf.Approximately(boundsInfluence, newboundsInfluence))
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.WorldBoundsInfluence = newboundsInfluence;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+            EditorGUILayout.Space(10);
+            bool UseMiniMap = fow.UseMiniMap;
+            bool newUseMiniMap = EditorGUILayout.Toggle("Enable Mini-Map?", UseMiniMap);
+            //bool newUseBounds = false;
+            if (UseMiniMap != newUseMiniMap)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.UseMiniMap = newUseMiniMap;
+                fow.UpdateAllMaterialProperties();
+            }
+            if (newUseMiniMap)
+            {
+                Color mapColor = fow.MiniMapColor;
+                Color newMapColor = EditorGUILayout.ColorField("--MiniMap Color: ", mapColor);
+                if (mapColor != newMapColor)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.MiniMapColor = newMapColor;
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                RawImage oldReference = fow.UIImage;
+                RawImage newReference = (RawImage)EditorGUILayout.ObjectField("--Minimap UI Raw Image Reference: ", oldReference, typeof(RawImage), true);
+                if (newReference != oldReference)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UIImage = newReference;
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+
+            if (newUseBounds || newUseMiniMap || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Texture || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Both)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.LabelField("Bounds:");
+                Vector3 WorldBoundsCenter = fow.WorldBounds.center;
+                Vector3 newWorldBoundsCenter = EditorGUILayout.Vector3Field("--Center: ", WorldBoundsCenter);
+                if (WorldBoundsCenter != newWorldBoundsCenter)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.WorldBounds.center = newWorldBoundsCenter;
+                    fow.InitFOWRT();
+                    fow.UpdateAllMaterialProperties();
+                }
+                Vector3 WorldBoundsExtents = fow.WorldBounds.extents;
+                Vector3 newWorldBoundsExtents = EditorGUILayout.Vector3Field("--Extents: ", WorldBoundsExtents);
+                if (WorldBoundsExtents != newWorldBoundsExtents)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.WorldBounds.extents = newWorldBoundsExtents;
+                    fow.InitFOWRT();
+                    fow.UpdateAllMaterialProperties();
+                }
+            }
+            if (newUseMiniMap || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Texture || fow.FOWSamplingMode == FogOfWarWorld.FogSampleMode.Both)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.LabelField("FOW Texture Options (either cause you are using a minimap, or because your sampling mode uses a texture, or both)");
+
+                int MiniMapResX = fow.FowResX;
+                int newMiniMapResX = EditorGUILayout.IntSlider("--FOW Res X: ", MiniMapResX, 128, 2048);
+                if (MiniMapResX != newMiniMapResX)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.FowResX = newMiniMapResX;
+                    fow.InitFOWRT();
+                    fow.UpdateAllMaterialProperties();
+                }
+                int MiniMapResY = fow.FowResY;
+                int newMiniMapResY = EditorGUILayout.IntSlider("--FOW Res Y: ", MiniMapResY, 128, 2048);
+                if (MiniMapResY != newMiniMapResY)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.FowResY = newMiniMapResY;
+                    fow.InitFOWRT();
+                    fow.UpdateAllMaterialProperties();
+                }
+
+                EditorGUILayout.Space(10);
+
+                bool useRegrow = fow.UseRegrow;
+                bool newUseRegrow = EditorGUILayout.Toggle("Use Regrow?", useRegrow);
+                //bool newUseBounds = false;
+                if (useRegrow != newUseRegrow)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.UseRegrow = newUseRegrow;
+                    fow.InitFOWRT();
+                    fow.UpdateAllMaterialProperties();
+                }
+                if (newUseRegrow)
+                {
+                    bool useFadeIn = fow.RevealerFadeIn;
+                    bool newUseFadeIn = EditorGUILayout.Toggle("--Use Revealer Fade-In?", useFadeIn);
+                    if (useFadeIn != newUseFadeIn)
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.RevealerFadeIn = newUseFadeIn;
+                        fow.UpdateAllMaterialProperties();
+                    }
+
+                    float oldRegrowSpeed = fow.FogRegrowSpeed;
+                    float newRegrowSpeed = EditorGUILayout.Slider("--Fog Fade Speed: ", oldRegrowSpeed, 0, 10);
+                    if (!Mathf.Approximately(oldRegrowSpeed, newRegrowSpeed))
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.FogRegrowSpeed = newRegrowSpeed;
+                        fow.UpdateAllMaterialProperties();
+                    }
+                    float oldInitVal = fow.InitialFogExplorationValue;
+                    float newInitVal = EditorGUILayout.Slider("--Initial Fog Exploration: ", oldInitVal, 0, 1);
+                    if (!Mathf.Approximately(oldInitVal, newInitVal))
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.InitialFogExplorationValue = newInitVal;
+                        fow.UpdateAllMaterialProperties();
+                    }
+                    float oldRegrowMax = fow.MaxFogRegrowAmount;
+                    float newRegrowMax = EditorGUILayout.Slider("--Max Fog Regrow Amount: ", oldRegrowMax, 0, 1);
+                    if (!Mathf.Approximately(oldRegrowMax, newRegrowMax))
+                    {
+                        Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                        fow.MaxFogRegrowAmount = newRegrowMax;
+                        fow.UpdateAllMaterialProperties();
+                    }
+                }
+            }
+
+            EditorGUILayout.Space(20);
+            EditorGUILayout.LabelField("------------------");
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("Utility Options (cant be changed at runtime)");
+
+            FogOfWarWorld.RevealerUpdateMode revealerMode = fow.revealerMode;
+            selected = (int)revealerMode;
+            selected = EditorGUILayout.Popup("Revealer Mode", selected, RevealerModeOptions);
+            revealerMode = (FogOfWarWorld.RevealerUpdateMode)selected;
+            if (fow.revealerMode != revealerMode)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.revealerMode = revealerMode;
+            }
+
+            if (fow.revealerMode == FogOfWarWorld.RevealerUpdateMode.N_Per_Frame)
+            {
+                int _numRevealersPerFrame = fow.MaxNumRevealersPerFrame;
+                int new_numRevealersPerFrame = EditorGUILayout.IntField("Num Revealers Per Frame: ", _numRevealersPerFrame);
+                if (_numRevealersPerFrame != new_numRevealersPerFrame)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.MaxNumRevealersPerFrame = new_numRevealersPerFrame;
+                }
+            }
+
+            int max_numRevealers = fow.MaxPossibleRevealers;
+            int newmax_numRevealers = EditorGUILayout.IntField("Max Num Revealers: ", max_numRevealers);
+            if (max_numRevealers != newmax_numRevealers)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.MaxPossibleRevealers = newmax_numRevealers;
+            }
+
+            int maxNumSegments = fow.MaxPossibleSegmentsPerRevealer;
+            int newmaxNumSegments = EditorGUILayout.IntField("Max Num Segments Per Revealer: ", maxNumSegments);
+            if (newmaxNumSegments != maxNumSegments)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.MaxPossibleSegmentsPerRevealer = newmaxNumSegments;
+            }
+
+            //bool oldAllowMinDist = fow.AllowMinimumDistance;
+            //bool newAllowMinDist = EditorGUILayout.Toggle("Enable Minimum Distance To Revealers? ", oldAllowMinDist);
+            //if (oldAllowMinDist != newAllowMinDist)
+            //{
+            //    fow.AllowMinimumDistance = newAllowMinDist;
+            //    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+            //    fow.UpdateFogConfig();
+            //}
+
+            bool is2d = fow.is2D;
+            bool new2d = EditorGUILayout.Toggle("Is 2D?", is2d);
+            if (is2d != new2d)
+            {
+                Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                fow.is2D = new2d;
+                fow.UpdateAllMaterialProperties();
+            }
+
+            if (!new2d)
+            {
+                FogOfWarWorld.GamePlane plane = fow.gamePlane;
+                selected = (int)plane;
+                selected = EditorGUILayout.Popup("Game Plane", selected, GamePlaneOptions);
+                plane = (FogOfWarWorld.GamePlane)selected;
+                if (fow.gamePlane != plane)
+                {
+                    Undo.RegisterCompleteObjectUndo(fow, "Change FOW parameters");
+                    fow.gamePlane = plane;
+                }
+            }
         }
     }
+#endif
 }

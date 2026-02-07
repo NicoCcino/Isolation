@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 75aaeb3a5a9218745b77646788f981db
+guid: 43b4db03f762daa4cb283c66f95ab899
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -13,6 +13,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 229484
   packageName: Pixel-Perfect Fog Of War
-  packageVersion: 3.1.1
-  assetPath: Assets/FogOfWar/Scripts/Extras/UnityBugWorkaround.cs
-  uploadId: 854814
+  packageVersion: 2.8.1
+  assetPath: Assets/FogOfWar/Scripts/GenerateInvertedCollider.cs
+  uploadId: 752989
