@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 
 namespace WiDiD.SceneManagement
@@ -198,6 +199,9 @@ namespace WiDiD.SceneManagement
 			return false;
 		}
 
-
+		internal void LoadSceneSet(SceneSet coreSet, bool v1, bool v2, object onCoreSetLoaded)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }
