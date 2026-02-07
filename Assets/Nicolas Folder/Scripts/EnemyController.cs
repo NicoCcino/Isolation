@@ -10,7 +10,15 @@ public class Enemy : MonoBehaviour
     public float waitTime = 0f;
     public float waitTimer = 0f;
     public int currentWaypointIndex = 0;
+    private EnemyVision vision;
 
+    void OnValidate()
+    {
+        if (vision == null)
+        {
+            vision = GetComponent<EnemyVision>();
+        }
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -92,4 +100,17 @@ public class Enemy : MonoBehaviour
         return false;
     }
 
+    void HuntPlayer()
+    {
+        
+    }
+
+    void DetectPlayer()
+    {
+        if (vision.CanSeePlayer()){
+            // Change state to warned
+            // Start timer for warning duration
+
+        }
+    }
 }
