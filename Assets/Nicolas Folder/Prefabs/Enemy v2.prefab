@@ -825,6 +825,8 @@ GameObject:
   - component: {fileID: 8083377578160220978}
   - component: {fileID: 5883576944570342003}
   - component: {fileID: 2746906085961344808}
+  - component: {fileID: 2091191739349648754}
+  - component: {fileID: 6439575448079365531}
   m_Layer: 0
   m_Name: Enemy v2
   m_TagString: Untagged
@@ -968,6 +970,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   animator: {fileID: 596210733532164393}
+--- !u!114 &2091191739349648754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4707088897640340098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06c78af948052824d93c22c84c08dd65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarHider
+  SamplePoints:
+  - {fileID: 6238356611610160701}
+  PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
+--- !u!114 &6439575448079365531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4707088897640340098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfbeda9b3b3aa04bbb897826b875157, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FOW.HiderDisableObjects
+  ObjectsToHide:
+  - {fileID: 399990827276407987}
 --- !u!1 &4752648763903758438
 GameObject:
   m_ObjectHideFlags: 0
@@ -2959,6 +2994,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8f2d72b8a186ccf458218ae1f88d275e, type: 3}
+--- !u!1 &399990827276407987 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5063714714737779777, guid: 8f2d72b8a186ccf458218ae1f88d275e, type: 3}
+  m_PrefabInstance: {fileID: 4884400350811173106}
+  m_PrefabAsset: {fileID: 0}
 --- !u!95 &596210733532164393 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5444511914204922331, guid: 8f2d72b8a186ccf458218ae1f88d275e, type: 3}

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 3180974642279649202}
   - component: {fileID: 7082983603260562571}
   - component: {fileID: -984581724197190288}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: "Canap\xE9"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
