@@ -201,6 +201,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1924958143095529400}
   - component: {fileID: 5871789204546518531}
+  - component: {fileID: 6979875735375412618}
+  - component: {fileID: 4712617139554174768}
+  - component: {fileID: 7627415520892002717}
+  - component: {fileID: 5809781451908776593}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -252,6 +256,92 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &6979875735375412618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213411353774400260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 225a1a238da21dd4895ddb6cd047830f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy
+  enemyData: {fileID: 11400000, guid: bf9f97dfa9ff5e140a907f15f0cbd2d3, type: 2}
+  agent: {fileID: 4712617139554174768}
+  waypoints: []
+--- !u!195 &4712617139554174768
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213411353774400260}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &7627415520892002717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213411353774400260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a93cd2c50fdd7e14caeaa35ca6e1dd7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  player: {fileID: 0}
+  enemyData: {fileID: 11400000, guid: bf9f97dfa9ff5e140a907f15f0cbd2d3, type: 2}
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 1
+--- !u!114 &5809781451908776593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213411353774400260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d024787dc27c46c49bdd1f0cdc4d9056, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  patrollingState:
+    enemyController: {fileID: 6979875735375412618}
+    enemyVision: {fileID: 7627415520892002717}
+    enemyData: {fileID: 0}
+    waitTime: 0
+    waitTimer: 0
+    currentWaypointIndex: 0
+  warnedState:
+    enemyController: {fileID: 0}
+    enemyVision: {fileID: 0}
+    enemyData: {fileID: 0}
+  huntingState:
+    enemyController: {fileID: 0}
+    enemyVision: {fileID: 0}
+    enemyData: {fileID: 0}
+  attackingState:
+    enemyController: {fileID: 0}
+    enemyVision: {fileID: 0}
+    enemyData: {fileID: 0}
+  startState: 0
 --- !u!1 &1284080071036702214
 GameObject:
   m_ObjectHideFlags: 0
