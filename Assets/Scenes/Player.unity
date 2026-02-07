@@ -143,7 +143,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.5
+      value: 3.64
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalPosition.y
@@ -151,23 +151,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -9
+      value: -1.39
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.0000029504295
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -175,7 +175,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 2286893779805548556, guid: d6947e6e248fe154ab2b6f9cd3146230, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z

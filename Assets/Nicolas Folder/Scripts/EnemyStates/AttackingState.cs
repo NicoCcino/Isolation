@@ -24,7 +24,6 @@ public class AttackingState : AEnemyState
     void UpdateAgentTarget()
     {
         // Set agent's target to player position
-        Debug.Log($"Agent is targetting pos {enemyVision.player.transform.position}");
         enemyController.agent.SetDestination(enemyVision.player.transform.position);
     }
 }
