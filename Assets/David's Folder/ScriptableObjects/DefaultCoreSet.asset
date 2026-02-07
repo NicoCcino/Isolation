@@ -10,13 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43741686dc38822479206e98c127cd24, type: 3}
-  m_Name: MainGameSet
+  m_Name: DefaultCoreSet
   m_EditorClassIdentifier: Assembly-CSharp::WiDiD.SceneManagement.SceneSet
   m_Scenes:
-  - sceneAsset: {fileID: 102900000, guid: effa82da47a388d4c9ed1bc42bd332a8, type: 3}
-    scenePath: Assets/Scenes/Environment.unity
-  - sceneAsset: {fileID: 102900000, guid: 0f603ee310c803c4b84202ffa5b980c7, type: 3}
-    scenePath: Assets/Scenes/Player.unity
+  - sceneAsset: {fileID: 102900000, guid: d60d12b01f6c6ae4096419ba493234e7, type: 3}
+    scenePath: Assets/Scenes/MainScene.unity
   m_ActiveScene:
     sceneAsset: {fileID: 102900000, guid: d60d12b01f6c6ae4096419ba493234e7, type: 3}
     scenePath: Assets/Scenes/MainScene.unity
