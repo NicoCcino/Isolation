@@ -7,9 +7,9 @@ public class EnemyVision : MonoBehaviour
     public LayerMask obstacleMask;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void OnEnable()
+    void Start()
     {
-        player = Player.Instance.KinematicCarController.CameraFollowPoint;
+        player = Player.Instance.KinematicCarController.transform;
     }
 
     // Update is called once per frame
@@ -17,11 +17,11 @@ public class EnemyVision : MonoBehaviour
     {
         if (CanSeePlayer())
         {
-            Debug.Log("Player seen!");
+            //Debug.Log("Player seen!");
         }
         if (CanPerceivePlayer())
         {
-            Debug.Log("Player perceived!");
+            //Debug.Log("Player perceived!");
         }
     }
 
@@ -69,24 +69,40 @@ public class EnemyVision : MonoBehaviour
     }
     public bool IsPlayerInDetectionCone(float detectionDistance, float detectionAngle)
     {
-        Vector3 dirToPlayer = (player.position - transform.position).normalized;
+        Vector3 origin = transform.position + Vector3.up * 1.6f;
+        Vector3 toPlayer = player.position - transform.position;
+        Vector3 dirToPlayer = toPlayer.normalized;
+        float distanceToPlayer = toPlayer.magnitude;
 
-        // Distance check
-        if (Vector3.Distance(transform.position, player.position) > detectionDistance)
+        // --- Distance check ---
+        if (distanceToPlayer > detectionDistance)
+        {
+            //Debug.Log("Player hors distance");
+            Debug.DrawRay(origin, dirToPlayer * detectionDistance, Color.gray);
             return false;
+        }
 
-        // Angle check
+        // --- Angle check ---
         float angle = Vector3.Angle(transform.forward, dirToPlayer);
         if (angle > detectionAngle / 2f)
+        {
+            //Debug.Log($"Player hors angle (angle = {angle:F1})");
+            Debug.DrawRay(origin, dirToPlayer * distanceToPlayer, Color.yellow);
             return false;
+        }
 
-        // Line of sight
-        if (Physics.Raycast(transform.position + Vector3.up * 1.6f,
-                            dirToPlayer,
-                            Vector3.Distance(transform.position, player.position),
-                            obstacleMask))
+        // --- Line of sight ---
+        RaycastHit hit;
+        if (Physics.Raycast(origin, dirToPlayer, out hit, distanceToPlayer, obstacleMask))
+        {
+            //Debug.Log($"Vue bloquée par : {hit.collider.name}");
+            Debug.DrawRay(origin, dirToPlayer * hit.distance, Color.red);
             return false;
+        }
 
+        // --- SUCCESS ---
+        //Debug.Log("Player détecté !");
+        Debug.DrawRay(origin, dirToPlayer * distanceToPlayer, Color.green);
         return true;
     }
 

@@ -281,6 +281,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5809781451908776593, guid: 16cb04a67e058d24c8b89d9713fd6430, type: 3}
+      propertyPath: startState
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6979875735375412618, guid: 16cb04a67e058d24c8b89d9713fd6430, type: 3}
       propertyPath: 'waypoints.Array.data[0]'
       value: 
