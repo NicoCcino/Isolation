@@ -70,7 +70,8 @@ public class EnemyVision : MonoBehaviour
     public bool IsPlayerInDetectionCone(float detectionDistance, float detectionAngle)
     {
         Vector3 origin = transform.position + Vector3.up * 1.6f;
-        Vector3 toPlayer = player.position - transform.position;
+        //Vector3 toPlayer = player.position - transform.position;
+        Vector3 toPlayer = player.position - (origin+transform.position)/2;
         Vector3 dirToPlayer = toPlayer.normalized;
         float distanceToPlayer = toPlayer.magnitude;
 
@@ -95,7 +96,7 @@ public class EnemyVision : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(origin, dirToPlayer, out hit, distanceToPlayer, obstacleMask))
         {
-            //Debug.Log($"Vue bloquée par : {hit.collider.name}");
+            Debug.Log($"Vue bloquée par : {hit.collider.name}");
             Debug.DrawRay(origin, dirToPlayer * hit.distance, Color.red);
             return false;
         }

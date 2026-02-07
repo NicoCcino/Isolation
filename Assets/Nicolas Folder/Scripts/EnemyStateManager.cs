@@ -60,7 +60,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
              {
                         { EEnemyState.Default, new DefaultState(enemyController,enemyVision,enemyData,enemyStateManager)},
                         { EEnemyState.Patrolling, new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
-                        { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,warnedState.warnedTime ) },
+                        { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,warnedState.warnedTime,warnedState.exclamationMarkGO) },
                         { EEnemyState.Hunting, new HuntingState(enemyController,enemyVision,enemyData,enemyStateManager) },
                         { EEnemyState.Attacking, new AttackingState(enemyController,enemyVision,enemyData,enemyStateManager) }
              };
