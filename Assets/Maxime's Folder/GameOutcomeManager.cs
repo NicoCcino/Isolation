@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 
@@ -53,12 +54,20 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
 
     void TimerUpdate()
     {
-        Timer++;
-        if (Timer % 100 == 0)
-        {
-            if(m_ShowDebugTimer) Debug.Log("Timer : "+ Timer/100 + "s" );
-        }
-        
+        Timer+= Time.deltaTime;
+            if(m_ShowDebugTimer) Debug.Log("Timer : "+ Timer + "s" );       
+    }
+
+    public float GetTimer()
+    {
+        return Timer;
+    }
+
+    public int GetTimerProgression()
+    {
+        int TimerProgression = 0;
+        TimerProgression = (int) Math.Round(Timer/GameDuration);
+        return TimerProgression;
     }
 }
 
