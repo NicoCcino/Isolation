@@ -4,8 +4,14 @@ public class PatrollingState : AEnemyState
 {
 
     public float waitTime = 0f;
-    public float waitTimer = 0f;
-    public int currentWaypointIndex = 0;
+    protected float waitTimer = 0f;
+    protected int currentWaypointIndex = 0;
+
+    public PatrollingState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager, float waitTime) : base(enemyController, enemyVision, enemyData, enemyStateManager)
+    {
+        this.waitTime = waitTime;
+    }
+
     public override void Enter()
     {
         enemyController.agent.speed = enemyData.walkSpeed;
@@ -70,7 +76,7 @@ public class PatrollingState : AEnemyState
         {
             // Change state to warned
             enemyStateManager.ChangeState(EEnemyState.Warned);
-            Debug.Log ("Agent detected player during patrol, changing state to warned.");
+            Debug.Log("Agent detected player during patrol, changing state to warned.");
         }
 
     }

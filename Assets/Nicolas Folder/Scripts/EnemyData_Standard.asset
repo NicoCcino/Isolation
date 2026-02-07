@@ -12,5 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca4e88998652e0248a4b32d6573e16e9, type: 3}
   m_Name: EnemyData_Standard
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  speed: 3
+  walkSpeed: 1
+  runSpeed: 3
   detectionSpeed: 0
+  viewDistance: 10
+  viewAngle: 90
+  perceptionDistance: 2
+  perceptionAngle: 90

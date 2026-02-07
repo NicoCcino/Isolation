@@ -7,9 +7,9 @@ public class EnemyVision : MonoBehaviour
     public LayerMask obstacleMask;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void OnEnable()
     {
-
+        player = Player.Instance.KinematicCarController.CameraFollowPoint;
     }
 
     // Update is called once per frame
@@ -92,7 +92,7 @@ public class EnemyVision : MonoBehaviour
 
     public bool CanSeePlayer()
     {
-        if(IsPlayerInDetectionCone(enemyData.viewDistance, enemyData.viewAngle))
+        if (IsPlayerInDetectionCone(enemyData.viewDistance, enemyData.viewAngle))
         {
             // TODO: Add a check if player is in light or shadows
             return true;

@@ -1,10 +1,14 @@
 using UnityEngine;
 [System.Serializable]
-public class AttackingState :  AEnemyState
+public class AttackingState : AEnemyState
 {
+    public AttackingState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager) : base(enemyController, enemyVision, enemyData, enemyStateManager)
+    {
+    }
+
     public override void Enter()
     {
-        Debug.Log ("Agent enters attack state");
+        Debug.Log("Agent enters attack state");
         enemyController.agent.speed = enemyData.runSpeed;
     }
 

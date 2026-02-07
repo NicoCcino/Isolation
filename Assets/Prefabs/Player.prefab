@@ -86,6 +86,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d40c0f76e04ca5429eab40940c9588e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
+  dontDestroyOnLoad: 0
   KinematicCarController: {fileID: 8750491659604723268}
   CameraController: {fileID: 8066399658131088706}
   DisableCameraControl: 1
