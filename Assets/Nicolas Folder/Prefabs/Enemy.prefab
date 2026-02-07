@@ -205,6 +205,7 @@ GameObject:
   - component: {fileID: 4712617139554174768}
   - component: {fileID: 7627415520892002717}
   - component: {fileID: 5809781451908776593}
+  - component: {fileID: 344112494728392304}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -335,6 +336,25 @@ MonoBehaviour:
   warnedState:
     warnedTime: 0
   startState: 0
+--- !u!114 &344112494728392304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213411353774400260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06c78af948052824d93c22c84c08dd65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarHider
+  SamplePoints:
+  - {fileID: 1924958143095529400}
+  PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &1284080071036702214
 GameObject:
   m_ObjectHideFlags: 0

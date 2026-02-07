@@ -144,12 +144,12 @@ MonoBehaviour:
   CameraFollowPoint: {fileID: 3164251075985867276}
   moveInputReference: {fileID: 0}
   MaxSpeed: 1
-  MaxReverseSpeed: 2
-  Acceleration: 0.8
-  Deceleration: 2
-  BrakeForce: 10
-  Gravity: 30
-  AirDrag: 0.1
+  MaxReverseSpeed: 0.6
+  Acceleration: 0.7
+  Deceleration: 0.2
+  BrakeForce: 0.2
+  Gravity: 9
+  AirDrag: 0.02
   SteeringSpeed: 80
   MinSpeedForSteering: 0.1
   TireGrip: 0.4
