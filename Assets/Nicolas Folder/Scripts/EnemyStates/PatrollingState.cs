@@ -15,7 +15,13 @@ public class PatrollingState : AEnemyState
     public override void Enter()
     {
         enemyController.agent.speed = enemyData.walkSpeed;
-        StartPatrol(enemyController.waypoints);
+        //if (IsPatrolAvailable(enemyController.waypoints))
+        //{
+            Debug.Log ("Going to waypoint 0");
+            enemyController.agent.SetDestination(enemyController.waypoints[currentWaypointIndex].position);
+            waitTime = enemyController.waypoints[currentWaypointIndex].GetComponent<PatrolWaypoint>().waitTime; // Set wait time  
+        //}
+
     }
 
     public override void Exit()
@@ -24,10 +30,9 @@ public class PatrollingState : AEnemyState
 
     public override void Update()
     {
-        Debug.Log("Agent is in patrolling state...");
+        //Debug.Log("Agent is in patrolling state...");
         CheckDetection();
         UpdatePatrolMovement();
-
     }
 
     public bool IsPatrolAvailable(Transform[] wps)
@@ -85,9 +90,11 @@ public class PatrollingState : AEnemyState
     {
         Debug.Log("Going to next waypoint");
         waitTimer = 0f;
+        Debug.Log("increasing currentWayPointIndex from " + currentWaypointIndex + " to " + (currentWaypointIndex + 1));
         currentWaypointIndex++;
         if (currentWaypointIndex == enemyController.waypoints.Length)
         {
+            Debug.Log("Reached max waypoints count, resetting currentWayPointIndex");
             currentWaypointIndex = 0; // Reset to the first waypoint
         }
         enemyController.agent.SetDestination(enemyController.waypoints[currentWaypointIndex].position);

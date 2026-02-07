@@ -1,5 +1,6 @@
 public enum EEnemyState
 {
+    Default,
     Patrolling,
     Warned,
     Hunting,

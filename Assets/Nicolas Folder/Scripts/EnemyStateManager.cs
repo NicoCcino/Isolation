@@ -12,6 +12,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
 
 
     [Header("States")]
+    [SerializeField] private DefaultState defaultState;
     [SerializeField] private PatrollingState patrollingState;
     [SerializeField] private WarnedState warnedState;
     [SerializeField] private HuntingState huntingState;
@@ -19,6 +20,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
 
     [Header("Debug")]
     [SerializeField] private EEnemyState startState;
+    private bool isInit = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -30,7 +32,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
     public override void ChangeState(EEnemyState newState)
     {
         // Exit the current state (if any)
-        if (stateDictionary == null || newState == CurrentState)
+        if ((stateDictionary == null || newState == CurrentState))
         {
             return;
         }
@@ -56,6 +58,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
             // Initialize the state dictionary
             stateDictionary = new Dictionary<EEnemyState, AEnemyState>
              {
+                        { EEnemyState.Default, new DefaultState(enemyController,enemyVision,enemyData,enemyStateManager)},
                         { EEnemyState.Patrolling, new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
                         { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,warnedState.warnedTime ) },
                         { EEnemyState.Hunting, new HuntingState(enemyController,enemyVision,enemyData,enemyStateManager) },
