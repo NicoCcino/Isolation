@@ -72,6 +72,7 @@ Transform:
   - {fileID: 2572808135642904386}
   - {fileID: 4579241640925653773}
   - {fileID: 2598371410350785563}
+  - {fileID: 6630917537260955152}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2956765081141001279
@@ -93,6 +94,166 @@ MonoBehaviour:
   UiDebugInputs: {fileID: 1994175591267956404}
   MoveInput: {fileID: 0}
   LookInput: {fileID: 0}
+--- !u!1 &3746391604679338085
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4562882893239206018}
+  - component: {fileID: 3332842868607573635}
+  m_Layer: 0
+  m_Name: HitAudioEvent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4562882893239206018
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3746391604679338085}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6630917537260955152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3332842868607573635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3746391604679338085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24f6a3c56d96c374dae31e9a0d4529b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioEventIntermediary
+  cooldownTime: 5
+  audioLoopBlender: {fileID: 8734678029474853571}
+  hitAudioClips:
+  - {fileID: 8300000, guid: c2cbd56985ab14944a72e0fb04f3f33b, type: 3}
+  volume: 1
+--- !u!1 &4950814324155012485
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8297698369817115641}
+  - component: {fileID: 2919641177002528326}
+  m_Layer: 0
+  m_Name: GruntAudioEvent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8297698369817115641
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4950814324155012485}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6630917537260955152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2919641177002528326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4950814324155012485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24f6a3c56d96c374dae31e9a0d4529b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioEventIntermediary
+  cooldownTime: 5
+  audioLoopBlender: {fileID: 8734678029474853571}
+  hitAudioClips:
+  - {fileID: 8300000, guid: f5b69b2cddfbffa47ab3a191270c1093, type: 3}
+  - {fileID: 8300000, guid: b7bac24a57b3e4a4e990ece3039bfa6e, type: 3}
+  volume: 0.9
+--- !u!1 &5138956915638137757
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6630917537260955152}
+  - component: {fileID: 8734678029474853571}
+  m_Layer: 0
+  m_Name: OldManAudioController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6630917537260955152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5138956915638137757}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -4.89413, y: 0, z: -3.91545}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8297698369817115641}
+  - {fileID: 4562882893239206018}
+  m_Father: {fileID: 2286893779805548556}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8734678029474853571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5138956915638137757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2413fb7d713cfe241b42952ceb457ae3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioLoopBlender
+  blendValue: 0
+  masterVolume: 1
+  usePitchModulation: 1
+  maxPitch: 0.8
+  eventPoolSize: 6
+  eventFadeSpeed: 1
+  audioLayers:
+  - name: Breathing
+    clip: {fileID: 8300000, guid: ead424d80b6e54a4f862702783841fdf, type: 3}
+    individualVolume: 0.2
+    source: {fileID: 0}
+  - name: Exhausted
+    clip: {fileID: 8300000, guid: e28540e5f10fa0849a6e8ebe976d7aec, type: 3}
+    individualVolume: 0.4
+    source: {fileID: 0}
 --- !u!1 &6634677319464770786
 GameObject:
   m_ObjectHideFlags: 0
@@ -1004,6 +1165,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2286893779805548556}
     m_Modifications:
+    - target: {fileID: 415906939864267187, guid: 2bdc7bf0e768a4b428d2d971d36cdb85, type: 3}
+      propertyPath: audioLoopBlender
+      value: 
+      objectReference: {fileID: 8734678029474853571}
+    - target: {fileID: 415906939864267187, guid: 2bdc7bf0e768a4b428d2d971d36cdb85, type: 3}
+      propertyPath: hitAudioEventIntermediary
+      value: 
+      objectReference: {fileID: 3332842868607573635}
+    - target: {fileID: 415906939864267187, guid: 2bdc7bf0e768a4b428d2d971d36cdb85, type: 3}
+      propertyPath: gruntAudioEventIntermediary
+      value: 
+      objectReference: {fileID: 2919641177002528326}
     - target: {fileID: 3523554527479690200, guid: 2bdc7bf0e768a4b428d2d971d36cdb85, type: 3}
       propertyPath: m_Name
       value: Character

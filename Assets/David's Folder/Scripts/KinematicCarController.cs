@@ -43,6 +43,11 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
     [Range(0f, 1f)]
     public float TireGrip = 0.95f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioEventIntermediary gruntAudioEventIntermediary;
+    [SerializeField] private AudioEventIntermediary hitAudioEventIntermediary;
+    [SerializeField] private AudioLoopBlender audioLoopBlender;
+    private float timeAccelerating = 0f;
     private Vector3 _moveInputVector;
     private CarInputs _inputs;
 
@@ -57,6 +62,7 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
     private void Update()
     {
         HandleInputs();
+        audioLoopBlender.blendValue = Mathf.Clamp(timeAccelerating / 10f, 0, 1);
     }
 
     private void HandleInputs()
@@ -131,6 +137,8 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
             {
                 targetSpeed = MaxSpeed;
                 accelRate = Acceleration;
+                timeAccelerating = Mathf.Clamp(timeAccelerating + Time.deltaTime, 0, 10);
+
             }
             // Reverse / Brake
             else if (_inputs.MoveAxisForward < 0f)
@@ -153,6 +161,7 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
             {
                 targetSpeed = 0f;
                 accelRate = Deceleration;
+                timeAccelerating = Mathf.Clamp(timeAccelerating - Time.deltaTime, 0, 10);
             }
 
             // Apply Forward Acceleration
@@ -183,7 +192,15 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
     public void AfterCharacterUpdate(float deltaTime) { }
     public bool IsColliderValidForCollisions(Collider coll) { return true; }
     public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
-    public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
+    public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport)
+    {
+        Debug.Log($"Player  collision with {hitCollider.gameObject.name}");
+        gruntAudioEventIntermediary.PlayAudioEvent();
+        hitAudioEventIntermediary.PlayAudioEvent();
+    }
     public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
-    public void OnDiscreteCollisionDetected(Collider hitCollider) { }
+    public void OnDiscreteCollisionDetected(Collider hitCollider)
+    {
+        Debug.Log($"Player discrete collision with {hitCollider.gameObject.name}");
+    }
 }

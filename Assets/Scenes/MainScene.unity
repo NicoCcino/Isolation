@@ -149,15 +149,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b1afdc8801548c4cab37872782c6e11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarWorld
+  UpdateMethod: 1
+  UsingSoftening: 0
   FogType: 1
   FogFade: 4
-  FogFadePower: 1
   BlendType: 1
+  EdgeSoftenDistance: 0.1
+  UnobscuredSoftenDistance: 0.25
+  UseInnerSoften: 1
+  InnerSoftenAngle: 5
+  AllowBleeding: 0
+  SightExtraAmount: 0.01
+  MaxFogDistance: 10000
+  PixelateFog: 0
+  WorldSpacePixelate: 0
+  PixelDensity: 2
+  RoundRevealerPosition: 0
+  PixelGridOffset: {x: 0, y: 0}
   UseDithering: 0
   DitherSize: 20
-  SightExtraAmount: 0.01
-  EdgeSoftenDistance: 0.1
-  MaxFogDistance: 10000
+  InvertFowEffect: 0
+  FogFadePower: 1
   FogAppearance: 2
   UnknownColor: {r: 0.14150941, g: 0.14150941, b: 0.14150941, a: 1}
   SaturationStrength: 0
@@ -170,49 +182,34 @@ MonoBehaviour:
   FogTextureTiling: {x: 1, y: 1}
   FogScrollSpeed: {x: 1, y: 1}
   OutlineThickness: 0.1
-  PixelateFog: 0
-  WorldSpacePixelate: 0
-  PixelDensity: 2
-  RoundRevealerPosition: 0
-  PixelGridOffset: {x: 0, y: 0}
-  UseWorldBounds: 0
-  WorldBoundsSoftenDistance: 1
-  WorldBoundsInfluence: 1
-  InvertFowEffect: 0
-  AllowBleeding: 0
   FOWSamplingMode: 0
-  HidersUseFogTexture: 1
-  HiderSeenThreshold: 0.5
-  AsyncReadbackFogDataToCpu: 0
+  UseRegrow: 0
+  RevealerFadeIn: 0
+  FogRegrowSpeed: 0.5
+  InitialFogExplorationValue: 0
+  MaxFogRegrowAmount: 0.3
+  FowTextureMaterial: {fileID: 0}
+  FowResX: 512
+  FowResY: 512
   UseConstantBlur: 1
   ConstantTextureBlurQuality: 2
   ConstantTextureBlurAmount: 0.75
-  UseMiniMap: 0
-  FowResX: 512
-  FowResY: 512
-  UseRegrow: 0
-  RevealerFadeIn: 0
-  RevealerFadeInSpeed: 0.5
-  RevealerFadeOut: 0
-  RevealerFadeOutSpeed: 0.5
-  InitialFogExplorationValue: 0
-  MaxFogRegrowAmount: 0.3
+  UseWorldBounds: 0
+  WorldBoundsSoftenDistance: 1
+  WorldBoundsInfluence: 1
   WorldBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0.5, y: 0.5, z: 0.5}
-  UpdateMethod: 1
-  RevealerUpdateMode: 1
+  UseMiniMap: 0
+  MiniMapColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.95}
+  UIImage: {fileID: 0}
+  revealerMode: 0
   MaxNumRevealersPerFrame: 25
-  UseSpatialAcceleration: 1
-  SpatialHashGridSize: 32
-  NumSpatialHashBuckets: 1024
   MaxPossibleRevealers: 256
   MaxPossibleSegmentsPerRevealer: 128
-  MaxPossibleHiders: 512
   is2D: 0
-  GamePlaneOrientation: 0
+  gamePlane: 0
   FogOfWarMaterial: {fileID: 0}
-  FowTextureMaterial: {fileID: 0}
 --- !u!4 &96261546
 Transform:
   m_ObjectHideFlags: 0
