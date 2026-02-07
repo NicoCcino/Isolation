@@ -8,6 +8,7 @@ public class PatrollingState : AEnemyState
     public int currentWaypointIndex = 0;
     public override void Enter()
     {
+        enemyController.agent.speed = enemyData.walkSpeed;
         StartPatrol(enemyController.waypoints);
     }
 
@@ -18,7 +19,9 @@ public class PatrollingState : AEnemyState
     public override void Update()
     {
         Debug.Log("Agent is in patrolling state...");
-        UpdatePatrol();
+        CheckDetection();
+        UpdatePatrolMovement();
+
     }
 
     public bool IsPatrolAvailable(Transform[] wps)
@@ -45,7 +48,7 @@ public class PatrollingState : AEnemyState
         }
     }
 
-    void UpdatePatrol()
+    void UpdatePatrolMovement()
     {
         if (IsPatrolAvailable(enemyController.waypoints))
         {
@@ -59,6 +62,17 @@ public class PatrollingState : AEnemyState
                 }
             }
         }
+    }
+
+    void CheckDetection()
+    {
+        if (enemyVision.CanSeePlayer() || enemyVision.CanPerceivePlayer())
+        {
+            // Change state to warned
+            enemyStateManager.ChangeState(EEnemyState.Warned);
+            Debug.Log ("Agent detected player during patrol, changing state to warned.");
+        }
+
     }
 
     void GoToNextPoint()

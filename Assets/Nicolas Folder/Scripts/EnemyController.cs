@@ -20,7 +20,7 @@ public class EnemyController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        agent.speed = enemyData.speed;
+        agent.speed = enemyData.walkSpeed;
     }
 
     // Update is called once per frame
@@ -28,11 +28,6 @@ public class EnemyController : MonoBehaviour
     {
         
     }
-
-
-    
-
-    
 
     public bool HasReachedDestination(NavMeshAgent agent)
     {
