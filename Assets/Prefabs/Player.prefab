@@ -261,36 +261,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarRevealer3D
-  viewRadius: 8
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 4
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 140
-  opacity: 1
+  ViewRadius: 8
+  SoftenDistance: 3
+  ViewAngle: 110
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 1
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 0
-  revealHiderInFadeOutZonePercentage: 0.5
-  MaxHidersSampledPerFrame: 50
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  useOcclusion: 1
-  addCorners: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
-    m_Bits: 64
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 4
-  numExtraRaysOnIteration: 3
+    m_Bits: 128
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 10
+  NumExtraIterations: 4
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 0
+  StaticRevealer: 0
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: -1
