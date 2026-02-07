@@ -32,13 +32,13 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     {
         GameOutcome = E_GameOutcome.Success;
         Debug.Log("Succes");
-        if(m_ShowDebugLog) Debug.Log("VICTORY" + SuccessReason + " / " + GameOutcome);
+        if(m_ShowDebugLog) Debug.Log("VICTORY : " + SuccessReason + " / " + GameOutcome);
     }
 
     public void Defeat(string DefeatReason) 
     {
         GameOutcome = E_GameOutcome.Defeat;
-        if(m_ShowDebugLog) Debug.Log("DEFEAT" + DefeatReason + " / " + GameOutcome);
+        if(m_ShowDebugLog) Debug.Log("DEFEAT : " + DefeatReason + " / " + GameOutcome);
     }
 
     // Update is called once per frame
@@ -47,7 +47,7 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
         TimerUpdate();
         if (Timer >= GameDuration)
         {
-            Defeat("TimerElasped");
+            Defeat("Timer Elasped");
         }
     }
 
