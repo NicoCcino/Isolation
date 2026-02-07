@@ -61,7 +61,7 @@ namespace WiDiD.SceneManagement
 			{
 				foreach (var item in pScenesToUnload)
 				{
-					WiDiD.SceneManagement.SceneManager.Instance.UnloadScene(item);
+					//WiDiD.SceneManagement.SceneManager.Instance.UnloadScene(item);
 				}
 			}
 			if (pScenesToLoad != null)

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 
 namespace WiDiD.SceneManagement
@@ -61,7 +62,7 @@ namespace WiDiD.SceneManagement
 		/// </summary>
 		/// <param name="sceneName"></param>
 		/// <param name="destroyAllObjects">Set true to enable UnloadAllEmbeddedSceneObjects option <seealso cref="UnityEngine.SceneManagement.UnloadSceneOptions.UnloadAllEmbeddedSceneObjects"/></param>
-		public void UnloadScene(string sceneName, bool safeUnload = true, bool destroyAllObjects = false, System.Action<AsyncOperation> onCompleted = null)
+		protected void UnloadScene(string sceneName, bool safeUnload = true, bool destroyAllObjects = false, System.Action<AsyncOperation> onCompleted = null)
 		{
 			if (safeUnload)
 			{
@@ -198,6 +199,9 @@ namespace WiDiD.SceneManagement
 			return false;
 		}
 
-
+		internal void LoadSceneSet(SceneSet coreSet, bool v1, bool v2, object onCoreSetLoaded)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

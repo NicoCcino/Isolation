@@ -13,8 +13,6 @@ MonoBehaviour:
   m_Name: MainMenuSet
   m_EditorClassIdentifier: Assembly-CSharp::WiDiD.SceneManagement.SceneSet
   m_Scenes:
-  - sceneAsset: {fileID: 102900000, guid: d60d12b01f6c6ae4096419ba493234e7, type: 3}
-    scenePath: Assets/Scenes/MainScene.unity
   - sceneAsset: {fileID: 102900000, guid: 2e55fb9cd7bee1f4cbbd18b785462242, type: 3}
     scenePath: Assets/David's Folder/Scenes/MainMenu.unity
   m_ActiveScene:

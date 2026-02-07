@@ -7,6 +7,7 @@ using UnityEngine;
 public class GameStateManager : BaseFSM<EGameState, AGameState>
 {
     public static GameStateManager Instance;
+    [SerializeField] private SceneSet coreSet;
     [Header("States")]
     [SerializeField] private MainMenuState mainMenuState;
     [SerializeField] private PlayingState playingState;
@@ -18,7 +19,7 @@ public class GameStateManager : BaseFSM<EGameState, AGameState>
     {
         Instance = this;
         InitStates();
-        ChangeState(startState);
+        SceneManager.Instance.LoadSceneSet(coreSet, true, OnCoreSetLoaded);
     }
 
     public override void ChangeState(EGameState newState)
@@ -34,17 +35,12 @@ public class GameStateManager : BaseFSM<EGameState, AGameState>
         }
 
         SceneManager.Instance.LoadSceneSet(stateDictionary[newState].SceneSet);
-        var scenesToUnload = stateDictionary[CurrentState].SceneSet.Scenes.Except(stateDictionary[newState].SceneSet.Scenes, new SceneComparer());
-        foreach (var scene in scenesToUnload)
-            SceneManager.Instance.UnloadScene(scene);
-
-        // Update the current state
+        SceneManager.Instance.UnloadSceneSet(stateDictionary[CurrentState].SceneSet);
         CurrentState = newState;
-
         // Enter the new state
-        if (stateDictionary.ContainsKey(newState))
+        if (stateDictionary.ContainsKey(CurrentState))
         {
-            stateDictionary[newState].Enter();
+            stateDictionary[CurrentState].Enter();
         }
     }
 
@@ -61,8 +57,11 @@ public class GameStateManager : BaseFSM<EGameState, AGameState>
              };
         }
     }
-    [Button("Set Start State")]
-    private void SetStartState()
+    public void SetCoreSceneSet(SceneSet sceneSet)
+    {
+        coreSet = sceneSet;
+    }
+    private void OnCoreSetLoaded()
     {
         ChangeState(startState);
     }
