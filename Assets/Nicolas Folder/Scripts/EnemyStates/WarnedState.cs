@@ -1,10 +1,16 @@
 using UnityEngine;
+using NaughtyAttributes;
 [System.Serializable]
 public class WarnedState : AEnemyState
 {
-
-    public float warnedTimer = 0f;
+    protected float warnedTimer = 0f;
     public float warnedTime = 2f;
+
+    public WarnedState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager, float warnedTime) : base(enemyController, enemyVision, enemyData, enemyStateManager)
+    {
+        this.warnedTime = warnedTime;
+    }
+
     public override void Enter()
     {
         // Stop movement

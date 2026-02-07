@@ -431,6 +431,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameOutcomeManager
   dontDestroyOnLoad: 1
   m_ShowDebugLog: 1
+  m_ShowDebugTimer: 0
   GameDuration: 1e+20
 --- !u!1001 &968857144
 PrefabInstance:

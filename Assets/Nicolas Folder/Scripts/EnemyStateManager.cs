@@ -1,11 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using NaughtyAttributes;
-using WiDiD.SceneManagement;
 using UnityEngine;
 
 public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
 {
+    [SerializeField] public EnemyController enemyController;
+    [SerializeField] public EnemyVision enemyVision;
+    [SerializeField] public EnemyData enemyData;
+    [SerializeField] public EnemyStateManager enemyStateManager;
+
 
     [Header("States")]
     [SerializeField] private PatrollingState patrollingState;
@@ -52,10 +56,10 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
             // Initialize the state dictionary
             stateDictionary = new Dictionary<EEnemyState, AEnemyState>
              {
-                        { EEnemyState.Patrolling, patrollingState },
-                        { EEnemyState.Warned, warnedState },
-                        { EEnemyState.Hunting, huntingState },
-                        { EEnemyState.Attacking, attackingState }
+                        { EEnemyState.Patrolling, new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
+                        { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,warnedState.warnedTime ) },
+                        { EEnemyState.Hunting, new HuntingState(enemyController,enemyVision,enemyData,enemyStateManager) },
+                        { EEnemyState.Attacking, new AttackingState(enemyController,enemyVision,enemyData,enemyStateManager) }
              };
         }
     }

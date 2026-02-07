@@ -17,6 +17,8 @@ MonoBehaviour:
     scenePath: Assets/Scenes/Environment.unity
   - sceneAsset: {fileID: 102900000, guid: 0f603ee310c803c4b84202ffa5b980c7, type: 3}
     scenePath: Assets/Scenes/Player.unity
+  - sceneAsset: {fileID: 102900000, guid: 79730d9066146b84bb68e51666a55c62, type: 3}
+    scenePath: Assets/Scenes/Level.unity
   m_ActiveScene:
     sceneAsset: {fileID: 102900000, guid: d60d12b01f6c6ae4096419ba493234e7, type: 3}
     scenePath: Assets/Scenes/MainScene.unity

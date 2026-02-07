@@ -270,7 +270,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   enemyData: {fileID: 11400000, guid: bf9f97dfa9ff5e140a907f15f0cbd2d3, type: 2}
   agent: {fileID: 4712617139554174768}
-  waypoints: []
+  waypoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!195 &4712617139554174768
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -281,8 +285,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
+  m_Speed: 2
+  m_Acceleration: 12
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
@@ -292,7 +296,7 @@ NavMeshAgent:
   m_Height: 2
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 2
 --- !u!114 &7627415520892002717
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -322,25 +326,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d024787dc27c46c49bdd1f0cdc4d9056, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  enemyController: {fileID: 6979875735375412618}
+  enemyVision: {fileID: 7627415520892002717}
+  enemyData: {fileID: 11400000, guid: bf9f97dfa9ff5e140a907f15f0cbd2d3, type: 2}
+  enemyStateManager: {fileID: 5809781451908776593}
   patrollingState:
-    enemyController: {fileID: 6979875735375412618}
-    enemyVision: {fileID: 7627415520892002717}
-    enemyData: {fileID: 0}
     waitTime: 0
-    waitTimer: 0
-    currentWaypointIndex: 0
   warnedState:
-    enemyController: {fileID: 0}
-    enemyVision: {fileID: 0}
-    enemyData: {fileID: 0}
-  huntingState:
-    enemyController: {fileID: 0}
-    enemyVision: {fileID: 0}
-    enemyData: {fileID: 0}
-  attackingState:
-    enemyController: {fileID: 0}
-    enemyVision: {fileID: 0}
-    enemyData: {fileID: 0}
+    warnedTime: 0
   startState: 0
 --- !u!1 &1284080071036702214
 GameObject:

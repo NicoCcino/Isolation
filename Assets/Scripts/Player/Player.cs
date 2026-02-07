@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem; // Required for New Input System
 
-public class Player : MonoBehaviour
+public class Player : Singleton<Player>
 {
     public KinematicCarController KinematicCarController;
     public CameraController CameraController;
