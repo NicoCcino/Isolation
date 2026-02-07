@@ -8,6 +8,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/FOW.unity
+    guid: cffb86e416bdc114591017494e41f235
+  - enabled: 1
+    path: Assets/Scenes/MainScene.unity
+    guid: d60d12b01f6c6ae4096419ba493234e7
+  - enabled: 1
+    path: Assets/Scenes/Player.unity
+    guid: 0f603ee310c803c4b84202ffa5b980c7
+  - enabled: 1
+    path: Assets/David's Folder/Scenes/MainMenu.unity
+    guid: 2e55fb9cd7bee1f4cbbd18b785462242
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: e57b584f6e51d84418b8586492ef08bb, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 3f175f68950985a4ca0123e6ee1a9774, type: 3}
