@@ -8,25 +8,26 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: PartialHiderGrid
-  m_Shader: {fileID: -6465566751694194690, guid: db1c1192b07f6304fb423e80da8b8823,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: db1c1192b07f6304fb423e80da8b8823, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - INNER_SOFTEN
   - SOFT
-  - USE_SPATIAL_HASHING
   - USE_TEXTURE_BLUR
   m_InvalidKeywords:
   - IS_3D
   - SAMPLE_TEXTURE
+  - _ALPHATEST_ON
   - _SURFACE_TYPE_TRANSPARENT
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses:
+  - DepthOnly
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -101,8 +102,6 @@ Material:
     - _AORemapMin: 0
     - _AlphaClip: 1
     - _AlphaToMask: 0
-    - _BUILTIN_QueueControl: -1
-    - _BUILTIN_QueueOffset: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 0
     - _BumpScale: 1
@@ -147,6 +146,7 @@ Material:
     - _UVOffset: {r: 0, g: 0, b: 0, a: 0}
     - _UVScale: {r: 2, g: 2, b: 0, a: 0}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!114 &580613637559718568
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -160,7 +160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   version: 7
---- !u!114 &5808873018183531955
+--- !u!114 &7613387816172819862
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -171,5 +171,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Unity.ShaderGraph.Editor::UnityEditor.Rendering.BuiltIn.AssetVersion
   version: 0

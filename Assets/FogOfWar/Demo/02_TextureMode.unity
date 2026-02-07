@@ -38,6 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -192,6 +193,10 @@ MonoBehaviour:
   - {fileID: 701427873}
   - {fileID: 1123910245}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &26649297
 GameObject:
   m_ObjectHideFlags: 0
@@ -574,36 +579,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 9.24
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 3
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 45
-  opacity: 1
-  addCorners: 0
+  ViewRadius: 9.24
+  SoftenDistance: 3
+  ViewAngle: 45
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 0
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 1
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 1
+  StaticRevealer: 1
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -613,10 +621,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!4 &169092685
 Transform:
   m_ObjectHideFlags: 0
@@ -1039,6 +1043,10 @@ MonoBehaviour:
   - {fileID: 946718947}
   - {fileID: 352745187}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &378594733
 GameObject:
   m_ObjectHideFlags: 0
@@ -1206,6 +1214,10 @@ MonoBehaviour:
   - {fileID: 26649298}
   - {fileID: 1837806507}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &430211341
 GameObject:
   m_ObjectHideFlags: 0
@@ -1241,9 +1253,9 @@ RectTransform:
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 299.25, y: -110}
-  m_SizeDelta: {x: 598.5, y: 220}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 660.75, y: -97.5}
+  m_SizeDelta: {x: -1321.5, y: 195}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &430211343
 MonoBehaviour:
@@ -1675,6 +1687,10 @@ MonoBehaviour:
   - {fileID: 1132384724}
   - {fileID: 659494327}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &602153511
 GameObject:
   m_ObjectHideFlags: 0
@@ -1801,15 +1817,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b1afdc8801548c4cab37872782c6e11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UpdateMethod: 1
+  UsingSoftening: 0
   FogType: 1
   FogFade: 3
-  FogFadePower: 1
-  BlendType: 1
+  BlendType: 0
+  EdgeSoftenDistance: 0
+  UnobscuredSoftenDistance: 0.25
+  UseInnerSoften: 1
+  InnerSoftenAngle: 5
+  AllowBleeding: 0
+  SightExtraAmount: 0.2
+  MaxFogDistance: 1000
+  PixelateFog: 0
+  WorldSpacePixelate: 0
+  PixelDensity: 2
+  RoundRevealerPosition: 0
+  PixelGridOffset: {x: 0, y: 0}
   UseDithering: 0
   DitherSize: 20
-  SightExtraAmount: 0.2
-  EdgeSoftenDistance: 0
-  MaxFogDistance: 1000
+  InvertFowEffect: 0
+  FogFadePower: 1
   FogAppearance: 3
   UnknownColor: {r: 0.40392157, g: 0.40392157, b: 0.40392157, a: 0.83137256}
   SaturationStrength: 0
@@ -1820,50 +1848,36 @@ MonoBehaviour:
   FogTexture: {fileID: 2800000, guid: e47f79b3449108f4fbb12890e55f5d70, type: 3}
   UseTriplanar: 1
   FogTextureTiling: {x: 0.1, y: 0.1}
-  FogScrollSpeed: {x: 1, y: 1}
+  FogScrollSpeed: 3
   OutlineThickness: 0.1
-  PixelateFog: 0
-  WorldSpacePixelate: 0
-  PixelDensity: 2
-  RoundRevealerPosition: 0
-  PixelGridOffset: {x: 0, y: 0}
-  UseWorldBounds: 0
-  WorldBoundsSoftenDistance: 1
-  WorldBoundsInfluence: 1
-  InvertFowEffect: 0
-  AllowBleeding: 0
   FOWSamplingMode: 1
-  HidersUseFogTexture: 1
-  AsyncReadbackFogDataToCpu: 0
+  UseRegrow: 1
+  RevealerFadeIn: 0
+  FogRegrowSpeed: 0.5
+  InitialFogExplorationValue: 0
+  MaxFogRegrowAmount: 0.3
+  FowTextureMaterial: {fileID: 0}
+  FowResX: 512
+  FowResY: 1024
   UseConstantBlur: 1
   ConstantTextureBlurQuality: 2
   ConstantTextureBlurAmount: 0.75
-  UseMiniMap: 0
-  FowResX: 512
-  FowResY: 1024
-  UseRegrow: 1
-  RevealerFadeIn: 0
-  RevealerFadeInSpeed: 0.5
-  RevealerFadeOut: 0
-  RevealerFadeOutSpeed: 0.5
-  InitialFogExplorationValue: 0
-  MaxFogRegrowAmount: 0.3
+  UseWorldBounds: 0
+  WorldBoundsSoftenDistance: 1
+  WorldBoundsInfluence: 1
   WorldBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 28, y: 0.5, z: 52.5}
-  UpdateMethod: 1
-  RevealerUpdateMode: 1
+  UseMiniMap: 0
+  MiniMapColor: {r: 0.16981131, g: 0.16981131, b: 0.16981131, a: 0.65}
+  UIImage: {fileID: 0}
+  revealerMode: 1
   MaxNumRevealersPerFrame: 3
-  UseSpatialAcceleration: 1
-  NumSpatialHashBuckets: 512
-  SpatialHashGridSize: 32
   MaxPossibleRevealers: 256
   MaxPossibleSegmentsPerRevealer: 128
-  MaxPossibleHiders: 512
   is2D: 0
-  GamePlaneOrientation: 0
+  gamePlane: 0
   FogOfWarMaterial: {fileID: 0}
-  FowTextureMaterial: {fileID: 0}
 --- !u!4 &618396800
 Transform:
   m_ObjectHideFlags: 0
@@ -2160,6 +2174,10 @@ MonoBehaviour:
   - {fileID: 2110941754}
   - {fileID: 1197308853}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &667852721
 GameObject:
   m_ObjectHideFlags: 0
@@ -2313,7 +2331,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1.3
+  m_Intensity: 1.57
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -2699,16 +2717,15 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 0
     m_MaxSize: 229
-    m_Alignment: 0
+    m_Alignment: 2
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: This scene showcases some of the effects possible when not using Pixel-Perfect
-    mode, such as Memory (which can remember previously explored areas, as well as
-    fade revealers in/out) and Texture Blur (which can be used to help blend inner-edge
-    softening)
+    mode, such as Regrow (which lets the fog fade back into existence) and Texture
+    Blur (which can be used to help blend inner-edge softening)
 --- !u!222 &784682573
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3133,7 +3150,7 @@ GameObject:
   - component: {fileID: 930204069}
   - component: {fileID: 930204072}
   - component: {fileID: 930204071}
-  - component: {fileID: 930204073}
+  - component: {fileID: 930204070}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -3156,6 +3173,18 @@ Transform:
   m_Father: {fileID: 2033300255}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 47.76, y: 0, z: 0}
+--- !u!114 &930204070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 930204068}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9de49a7657279af4c8e6f1889b2e8626, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!81 &930204071
 AudioListener:
   m_ObjectHideFlags: 0
@@ -3207,18 +3236,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &930204073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 930204068}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41eea5c3a239e31459a4f1b34093eca5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &932131242
 GameObject:
   m_ObjectHideFlags: 0
@@ -3675,7 +3692,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1028497005}
   m_Enabled: 1
-  m_CastShadows: 0
+  m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -4315,6 +4332,10 @@ MonoBehaviour:
   - {fileID: 1526511826}
   - {fileID: 342384217}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &1197308852
 GameObject:
   m_ObjectHideFlags: 0
@@ -4756,6 +4777,10 @@ MonoBehaviour:
   - {fileID: 197202339}
   - {fileID: 686041600}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &1333424017
 GameObject:
   m_ObjectHideFlags: 0
@@ -5025,36 +5050,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewRadius: 10
-  softenDistance: 3
-  innerSoftenAngle: 5
-  unobscuredRadius: 1
-  unobscuredSoftenDistance: 0.25
-  visionHeight: 3
-  visionHeightSoftenDistance: 1.5
-  viewAngle: 360
-  opacity: 1
-  addCorners: 1
+  ViewRadius: 10
+  SoftenDistance: 3
+  ViewAngle: 360
+  UnobscuredRadius: 1
+  Opacity: 1
+  AddCorners: 0
+  RevealHiderInFadeOutZonePercentage: 0.5
   EyeOffset: 0
   ShaderEyeOffset: 0
-  StartRevealerAsStatic: 0
-  SetHiderRayOriginToHidersHeight: 0
-  SetHiderRayDestinationToRevealersHeight: 1
-  MaxHidersSampledPerFrame: 50
-  revealHiderInFadeOutZonePercentage: 0.5
-  useOcclusion: 1
+  VisionHeight: 3
+  VisionHeightSoftenDistance: 1.5
+  SampleHidersAtRevealerHeight: 1
+  CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 1
-  OcclusionQuality: 5
-  raycastResolution: 0.5
-  NumExtraIterations: 3
-  numExtraRaysOnIteration: 3
+  RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 7
+  NumExtraIterations: 3
+  NumExtraRaysOnIteration: 3
+  MaxHidersSampledPerFrame: 50
   MaxAcceptableEdgeAngleDifference: 0.005
-  edgeDstThreshold: 0.1
-  doubleHitMaxAngleDelta: 15
+  EdgeDstThreshold: 0.1
+  DoubleHitMaxAngleDelta: 15
+  StartRevealerAsStatic: 0
+  StaticRevealer: 0
+  FogOfWarID: 0
+  IndexID: 0
+  NumberOfPoints: 0
+  Angles: []
+  Radii: []
+  AreHits: 
   DebugMode: 0
   DrawInitialRays: 0
   SegmentTest: 0
@@ -5064,10 +5092,6 @@ MonoBehaviour:
   DrawExtraCastLines: 0
   DrawHiderSamples: 0
   DebugLogHiderBlockerName: 0
-  ForwardVectorCached:
-    x: 0
-    y: 0
-    z: 0
 --- !u!1 &1389368228
 GameObject:
   m_ObjectHideFlags: 0
@@ -5169,6 +5193,10 @@ MonoBehaviour:
   - {fileID: 768398242}
   - {fileID: 878642520}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &1434191110
 GameObject:
   m_ObjectHideFlags: 0
@@ -5336,6 +5364,10 @@ MonoBehaviour:
   - {fileID: 127154257}
   - {fileID: 703390797}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &1526511825
 GameObject:
   m_ObjectHideFlags: 0
@@ -5949,6 +5981,10 @@ MonoBehaviour:
   - {fileID: 1044445852}
   - {fileID: 932230936}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &1798936512
 GameObject:
   m_ObjectHideFlags: 0
@@ -7250,6 +7286,10 @@ MonoBehaviour:
   - {fileID: 2074841338}
   - {fileID: 1095238165}
   PermanentlyReveal: 0
+  MaxDistBetweenSamplePoints: 0
+  NumObservers: 0
+  Observers: []
+  CachedTransform: {fileID: 0}
 --- !u!1 &2075135237
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,13 +13,14 @@ Shader "Hidden/FullScreen/FOW/FOW_RT"
         {
             CGPROGRAM
             #pragma multi_compile_local _ USE_REGROW
+            #pragma multi_compile_local _ USE_FADEIN
             #pragma multi_compile_local _ IGNORE_HEIGHT
 
             #pragma vertex vert
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            #include_with_pragmas "../FogOfWarLogic.hlsl"
+            #include_with_pragmas "FogOfWarLogic.hlsl"
             //#include "../FogOfWarLogic.hlsl"
 
             struct appdata
@@ -47,9 +48,9 @@ Shader "Hidden/FullScreen/FOW/FOW_RT"
 
             float4x4 _camToWorldMatrix;
             float4x4 _inverseProjectionMatrix;
-
-            float _fadeOutSpeed;
-            float _fadeInSpeed;
+			
+            float4 _unKnownColor;
+            float _regrowSpeed;
             float _maxRegrowAmount;
 
 
@@ -57,40 +58,48 @@ Shader "Hidden/FullScreen/FOW/FOW_RT"
             {
                 //fixed4 color = tex2D(_MainTex, i.uv);
 
-                float revealerSample = 0;
+                float coneCheckOut = 0;
 				float2 pos = float2(((i.uv.x-.5) * _worldBounds.x) + _worldBounds.y, ((i.uv.y-.5) * _worldBounds.z) + _worldBounds.w);
 
                 //return float4(pos.x, pos.y, 0,1);
 
-                FOW_Sample_Raw_float(pos, 0, revealerSample);
+                FOW_Sample_Raw_float(pos, 0, coneCheckOut);
+                //CustomCurve_float(coneCheckOut, coneCheckOut);
 
                 #if USE_REGROW
                     //return tex2D(_MainTex, i.uv);
-                    float opacitySample = 1 - tex2D(_MainTex, i.uv).r;
+                    float opacitySample = 1 - tex2D(_MainTex, i.uv).w;
 
-                    if (revealerSample > opacitySample) //fade in
-                    { 
-                        float targetValue = _fadeInSpeed > 1000 ? 1 : opacitySample + _fadeInSpeed * unity_DeltaTime.x; //if fade out speed is this high we can assume we are aiming for instant fade in (default behavior).
-                        revealerSample = min(revealerSample, targetValue);
-                    }
-                    else    //fade out
-                    {
-                        float targetValue = opacitySample;
-                        if (opacitySample >= _maxRegrowAmount) 
-                        {
-                            targetValue = _fadeOutSpeed > 1000 ? 0 : targetValue - unity_DeltaTime.x * _fadeOutSpeed; //if fade out speed is this high we can assume we are aiming for instant regrowth (default behavior).
-                            targetValue = max(targetValue, _maxRegrowAmount);
-                        }
-                        revealerSample = max(revealerSample, targetValue);
-                    }
+                    #if USE_FADEIN
+
+                        float maxMove = unity_DeltaTime.x * _regrowSpeed;
+                        float difference = coneCheckOut - opacitySample;
+                        if (abs(difference) > maxMove)
+                            coneCheckOut = opacitySample + sign(difference) * maxMove;
+
+                        if (difference < 0 && coneCheckOut < _maxRegrowAmount)
+                            coneCheckOut = opacitySample;
 
 
-                    revealerSample = saturate(revealerSample);
+                    #else
+                        
+                        coneCheckOut = max(coneCheckOut, opacitySample - unity_DeltaTime.x * _regrowSpeed);
+
+                        //if (coneCheckOut - oldOpacitySample <= 0 && opacitySample < _maxRegrowAmount)
+                        //if (opacitySample > _maxRegrowAmount && coneCheckOut < _maxRegrowAmount)
+                        if (coneCheckOut - opacitySample < 0 && coneCheckOut < _maxRegrowAmount)
+                            coneCheckOut = opacitySample;
+
+                    #endif
+
+                    coneCheckOut = clamp(coneCheckOut, 0, 1);
 
                 #endif
 
-                float outSample = (1 - revealerSample);
-                return float4(outSample,outSample,outSample,outSample);
+				//return float4(coneCheckOut,coneCheckOut,coneCheckOut,1);
+                //return float4(lerp(color.rgb * _unKnownColor, color.rgb, coneCheckOut), color.a);
+                return float4(_unKnownColor.rgb, (1 - coneCheckOut));
+                return float4(_unKnownColor.rgb, (1 - coneCheckOut) * _unKnownColor.a);
             }
             ENDCG
         }
@@ -130,13 +139,13 @@ Shader "Hidden/FullScreen/FOW/FOW_RT"
             fixed4 frag(v2f i) : SV_Target
             {
                 fixed4 color = tex2D(_MainTex, i.uv);
-                color.r = 1 - color.r;
+                color.w = 1 - color.w;
                 return color;
-                //color.r-= unity_DeltaTime.z;
-                if (color.r > _maxRegrowAmount)
+                //color.w-= unity_DeltaTime.z;
+                if (color.w > _maxRegrowAmount)
                 {
-                    color.r -= unity_DeltaTime.x * _regrowSpeed;
-                    color.r = clamp(color.r, _maxRegrowAmount, 1);
+                    color.w -= unity_DeltaTime.x * _regrowSpeed;
+                    color.w = clamp(color.w, _maxRegrowAmount, 1);
                 }
                 
                 return color;

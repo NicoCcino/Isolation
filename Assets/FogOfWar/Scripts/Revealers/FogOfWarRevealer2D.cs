@@ -1,4 +1,8 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -8,7 +12,7 @@ using UnityEngine.Profiling;
 
 namespace FOW
 {
-    public class FogOfWarRevealer2D : RaycastRevealer
+    public class FogOfWarRevealer2D : FogOfWarRevealer
     {
         private RaycastHit2D[] InitialRayResults;
         private PhysicsScene2D physicsScene2D;
@@ -19,18 +23,18 @@ namespace FOW
             physicsScene2D = gameObject.scene.GetPhysicsScene2D();
         }
 
-        protected override void _CleanupRaycastRevealer()
+        protected override void CleanupRevealer()
         {
 
         }
 
-        protected override void IterationOne(float firstAngle, float angleStep)
+        protected override void IterationOne(int NumSteps, float firstAngle, float angleStep)
         {
-            for (int i = 0; i < FirstIterationStepCount; i++)
+            for (int i = 0; i < NumSteps; i++)
             {
                 FirstIteration.RayAngles[i] = firstAngle + (angleStep * i);
                 FirstIteration.Directions[i] = DirectionFromAngle(FirstIteration.RayAngles[i], true);
-                RayHit = physicsScene2D.Raycast((Vector3)EyePosition, FirstIteration.Directions[i], TotalRevealerRadius, ObstacleMask);
+                RayHit = physicsScene2D.Raycast(EyePosition, FirstIteration.Directions[i], RayDistance, ObstacleMask);
                 if (RayHit.collider != null)
                 {
                     FirstIteration.Hits[i] = true;
@@ -42,15 +46,12 @@ namespace FOW
                 {
                     FirstIteration.Hits[i] = false;
                     FirstIteration.Normals[i] = -FirstIteration.Directions[i];
-                    FirstIteration.Distances[i] = TotalRevealerRadius;
-                    FirstIteration.Points[i] = GetPositionxy(EyePosition) + FirstIteration.Directions[i] * TotalRevealerRadius;
+                    FirstIteration.Distances[i] = RayDistance;
+                    FirstIteration.Points[i] = GetPositionxy(EyePosition) + FirstIteration.Directions[i] * RayDistance;
                 }
             }
 
-            //PointsJob.SStep = SinStep;
-            //PointsJob.CStep = CosStep;
-            //PointsJobHandle = PointsJob.Schedule(FirstIterationStepCount, CommandsPerJob, default(JobHandle));
-            PreReqJobHandle = default(JobHandle);
+            PointsJobHandle = PointsJob.Schedule(NumSteps, CommandsPerJob, default(JobHandle));
         }
 
         private RaycastHit2D RayHit;
@@ -60,7 +61,7 @@ namespace FOW
             Vector2 direction = DirectionFromAngle(angle, true);
             ray.angle = angle;
             ray.direction = direction;
-            RayHit = physicsScene2D.Raycast((Vector3)EyePosition, direction, TotalRevealerRadius, ObstacleMask);
+            RayHit = physicsScene2D.Raycast(EyePosition, direction, RayDistance, ObstacleMask);
 
             if (RayHit.collider != null)
             {
@@ -73,8 +74,8 @@ namespace FOW
             {
                 ray.hit = false;
                 ray.normal = -direction;
-                ray.distance = TotalRevealerRadius;
-                ray.point = GetPositionxy(EyePosition) + ray.direction * TotalRevealerRadius;
+                ray.distance = RayDistance;
+                ray.point = GetPositionxy(EyePosition) + ray.direction * RayDistance;
             }
         }
 
@@ -86,7 +87,12 @@ namespace FOW
             return pos2d;
         }
 
-        protected override float GetEyeRotation()
+        protected override void _FindEdge()
+        {
+
+        }
+
+        protected override float GetEuler()
         {
             Vector3 up = transform.up;
             up.z = 0;
@@ -96,7 +102,7 @@ namespace FOW
             //return transform.eulerAngles.z;
         }
 
-        public override float3 GetEyePosition()
+        public override Vector3 GetEyePosition()
         {
             Vector3 eyePos = transform.position;
             if (FogOfWarWorld.instance.PixelateFog && FogOfWarWorld.instance.RoundRevealerPosition)
@@ -111,146 +117,167 @@ namespace FOW
             return eyePos;
         }
 
-        protected override bool CanSeeHider(FogOfWarHider hiderInQuestion, float2 hiderPosition)
+        Vector3 hiderPosition;
+        private float unobscuredSightDist;
+        protected override void _RevealHiders()
         {
-            float maxSampleDist = hiderInQuestion.MaxSamplePointLocalPosition;
-            float distSqToHider = FogMath2D.DistanceSq(hiderPosition, RevealerPosition);
+#if UNITY_EDITOR
+            Profiler.BeginSample("Revealing Hiders");
+#endif
+            FogOfWarHider hiderInQuestion;
+            float distToHider;
+            EyePosition = GetEyePosition();
+            ForwardVectorCached = GetForward();
+            float sightDist = ViewRadius;
+            if (FogOfWarWorld.instance.UsingSoftening)
+                sightDist += RevealHiderInFadeOutZonePercentage * SoftenDistance;
 
-            if (maxSampleDist == 0)     //fast path for hiders with 1 sample point
+            unobscuredSightDist = UnobscuredRadius;
+            if (FogOfWarWorld.instance.UsingSoftening)
+                unobscuredSightDist += RevealHiderInFadeOutZonePercentage * FogOfWarWorld.instance.UnobscuredSoftenDistance;
+
+            //foreach (FogOfWarHider hiderInQuestion in FogOfWarWorld.HidersList)
+            for (int i = 0; i < Mathf.Min(MaxHidersSampledPerFrame, FogOfWarWorld.NumHiders); i++)
             {
-                if (distSqToHider > hiderSightDistSq)
-                    return false;
-            }
-            else
-            {
-                // Expand search radius by max sample offset so we don't miss hiders 
-                // whose origin is outside range but sample points are inside
-                float threshold = hiderSightDist + maxSampleDist;
-                if (distSqToHider > threshold * threshold)
-                    return false;
-            }
-
-            if (maxSampleDist == 0)   //if only one sample point, then skip loop and extra distance calcs
-                return CanSeeWorldPositionPartTwo(distSqToHider, hiderInQuestion.SamplePoints[0].position);
-
-            for (int j = 0; j < hiderInQuestion.SamplePoints.Length; j++)
-            {
-                if (CanSeeHiderExtraSamplePoint(hiderInQuestion.SamplePoints[j]))
-                    return true;
-            }
-
-            return false;
-        }
-
-        bool CanSeeHiderExtraSamplePoint(Transform samplePoint)
-        {
-            return CanSeeWorldPosition(samplePoint.position);
-        }
-
-        float3 hiderPosition;
-        bool CanSeeWorldPosition(float3 samplePointPosition)
-        {
-            //float distToHider = distBetweenVectors(samplePointPosition, EyePosition);
-
-            float sqDistToPoint = DistanceSq(samplePointPosition, EyePosition);
-            if (sqDistToPoint > hiderSightDistSq)
-                return false;
-
-
-            return CanSeeWorldPositionPartTwo(sqDistToPoint, samplePointPosition);
-        }
-
-        bool CanSeeWorldPositionPartTwo(float sqDistToPoint, float3 samplePointPosition)
-        {
-            if (sqDistToPoint < unobscuredHiderSightDistSq)
-                return unobscuredRadius >= 0;   //for negative ubobscured radius
-
-            if (IsInFOV(samplePointPosition - EyePosition, ForwardVectorProjectedCached))
-            {
-                if (!useOcclusion)
-                    return true;
-
-                SetHiderPosition(samplePointPosition);
-                float distToPoint = math.sqrt(sqDistToPoint);
-                if (!physicsScene2D.Raycast((Vector3)EyePosition, (Vector3)(hiderPosition - EyePosition), distToPoint, ObstacleMask))
+                _lastHiderIndex = (_lastHiderIndex + 1) % FogOfWarWorld.NumHiders;
+                hiderInQuestion = FogOfWarWorld.HidersList[_lastHiderIndex];
+                bool seen = false;
+                Transform samplePoint;
+                float minDistToHider = distBetweenVectors(hiderInQuestion.transform.position, EyePosition) - hiderInQuestion.MaxDistBetweenSamplePoints;
+                if (minDistToHider < UnobscuredRadius || (minDistToHider < sightDist))
                 {
-                    return true;
+                    for (int j = 0; j < hiderInQuestion.SamplePoints.Length; j++)
+                    {
+                        samplePoint = hiderInQuestion.SamplePoints[j];
+                        distToHider = distBetweenVectors(samplePoint.position, EyePosition);
+                        if (distToHider < UnobscuredRadius || (distToHider < sightDist && Mathf.Abs(AngleBetweenVector2(samplePoint.position - EyePosition, ForwardVectorCached)) < ViewAngle / 2))
+                        {
+                            SetHiderPosition(samplePoint.position);
+                            if (!physicsScene2D.Raycast(EyePosition, hiderPosition - EyePosition, distToHider, ObstacleMask))
+                            {
+                                seen = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (UnobscuredRadius < 0 && (minDistToHider + 1.5f * hiderInQuestion.MaxDistBetweenSamplePoints) < -UnobscuredRadius)
+                    seen = false;
+
+                if (seen)
+                {
+                    if (!HidersSeen.Contains(hiderInQuestion))
+                    {
+                        HidersSeen.Add(hiderInQuestion);
+                        hiderInQuestion.AddObserver(this);
+                    }
+                }
+                else
+                {
+                    if (HidersSeen.Contains(hiderInQuestion))
+                    {
+                        HidersSeen.Remove(hiderInQuestion);
+                        hiderInQuestion.RemoveObserver(this);
+                    }
                 }
             }
-
-            return false;
+#if UNITY_EDITOR
+            Profiler.EndSample();
+#endif
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool IsInFOV(float3 dirToTarget, float2 forwardProjected)
-        {
-            if (CircleIsComplete)
-                return true;
-            float2 dirProjected = math.normalize(new float2(dirToTarget.x, dirToTarget.y));
-            return math.dot(dirProjected, forwardProjected) >= cosHalfViewAngle;
-        }
-
-        void SetHiderPosition(float3 point)
+        void SetHiderPosition(Vector3 point)
         {
             hiderPosition.x = point.x;
             hiderPosition.y = point.y;
             //hiderPosition.z = getEyePos().z;
         }
 
-        protected override bool _TestPoint(float3 point)
+        protected override bool _TestPoint(Vector3 point)
         {
-            return CanSeeWorldPosition(point);
+            float sightDist = ViewRadius;
+            if (FogOfWarWorld.instance.UsingSoftening)
+                sightDist += RevealHiderInFadeOutZonePercentage * SoftenDistance;
+
+            EyePosition = GetEyePosition();
+            float distToPoint = distBetweenVectors(point, EyePosition);
+            if (distToPoint < UnobscuredRadius || (distToPoint < sightDist && Mathf.Abs(AngleBetweenVector2(point - EyePosition, GetForward())) < ViewAngle / 2))
+            {
+                SetHiderPosition(point);
+                if (!physicsScene2D.Raycast(EyePosition, hiderPosition - transform.position, distToPoint, ObstacleMask))
+                    return true;
+            }
+            return false;
         }
 
-        protected override void SetPositionAndHeight()
+        protected override void SetCenterAndHeight()
         {
-            RevealerPosition.x = EyePosition.x;
-            RevealerPosition.y = EyePosition.y;
-            RevealerHeightPosition = transform.position.z;
+            center.x = EyePosition.x;
+            center.y = EyePosition.y;
+            heightPos = transform.position.z;
         }
 
-        protected override float AngleBetweenVector2(float3 _vec1, float3 _vec2)
+        Vector2 vec1;
+        Vector2 vec2;
+        Vector2 _vec1Rotated90;
+        protected override float AngleBetweenVector2(Vector3 _vec1, Vector3 _vec2)
         {
-            float2 a = new float2(_vec1.x, _vec1.y);
-            float2 b = new float2(_vec2.x, _vec2.y);
-            return FogMath2D.SignedAngleDeg(a, b);
+            vec1.x = _vec1.x;
+            vec1.y = _vec1.y;
+            vec2.x = _vec2.x;
+            vec2.y = _vec2.y;
+
+            //vec1 = vec1.normalized;
+            //vec2 = vec2.normalized;
+            _vec1Rotated90.x = -vec1.y;
+            _vec1Rotated90.y = vec1.x;
+            //Vector2 vec1Rotated90 = new Vector2(-vec1.y, vec1.x);
+            float sign = (Vector2.Dot(_vec1Rotated90, vec2) < 0) ? -1.0f : 1.0f;
+            return Vector2.Angle(vec1, vec2) * sign;
+        }
+        float distBetweenVectors(Vector3 _vec1, Vector3 _vec2)
+        {
+            vec1.x = _vec1.x;
+            vec1.y = _vec1.y;
+            vec2.x = _vec2.x;
+            vec2.y = _vec2.y;
+            return Vector2.Distance(vec1, vec2);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float DistanceSq(float3 a, float3 b)
+        Vector3 ForwardVectorCached;
+        Vector3 GetForward()
         {
-            float dx = a.x - b.x;
-            float dy = a.y - b.y;
-            return dx * dx + dy * dy;
+            return new Vector3(transform.up.x, transform.up.y, 0).normalized;
+            //return new Vector3(-transform.up.x, transform.up.y, 0).normalized;
         }
 
-        protected override void SetCachedForward()
-        {
-            ForwardVectorCached = math.normalize(new float3(transform.up.x, transform.up.y, 0));
-            ForwardVectorProjectedCached = new float2(ForwardVectorCached.x, ForwardVectorCached.y);
-        }
+        RaycastHit2D rayHit;
 
+        Vector2 direction2d = Vector3.zero;
         Vector2 DirectionFromAngle(float angleInDegrees, bool angleIsGlobal)
         {
             if (!angleIsGlobal)
+            {
                 angleInDegrees += transform.eulerAngles.z;
-            float s, c; math.sincos(math.radians(angleInDegrees), out s, out c);
-            return new float2(c, s);
-
-            //direction2d.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
-            //direction2d.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
-            //return direction2d;
+            }
+            direction2d.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+            direction2d.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+            return direction2d;
         }
 
         Vector3 direction = Vector3.zero;
-        public override float3 DirFromAngle(float angleInDegrees)
+        public override Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
         {
-            float angleInRadians = math.radians(angleInDegrees);
-            math.sincos(angleInRadians, out direction.y, out direction.x);
+            if (!angleIsGlobal)
+            {
+                angleInDegrees += transform.eulerAngles.z;
+            }
+            direction.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+            direction.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
             return direction;
         }
 
-        protected override float3 _Get3DPositionfrom2D(float2 pos)
+        protected override Vector3 _Get3Dfrom2D(Vector2 pos)
         {
             return new Vector3(pos.x, pos.y, 0);
         }

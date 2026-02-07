@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d9370ad293dfcd0458d3308189af745f
+guid: 07dbc7af96c395d46b6f1266427a397b
 ShaderImporter:
   externalObjects: {}
   defaultTextures: []
@@ -12,6 +12,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 229484
   packageName: Pixel-Perfect Fog Of War
-  packageVersion: 3.1.1
-  assetPath: Assets/FogOfWar/Shaders/MinimapUI.shader
-  uploadId: 854814
+  packageVersion: 2.8.1
+  assetPath: Assets/FogOfWar/Shaders/Resources/FogOfWarLogic.hlsl
+  uploadId: 752989

@@ -1,235 +1,92 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Burst;
 using System.Runtime.CompilerServices;
-using Unity.Profiling;
-
 #if UNITY_EDITOR
 using UnityEngine.Profiling;
+using UnityEditor;
 #endif
 
 namespace FOW
 {
-	public class FogOfWarRevealer3D : RaycastRevealer
-    {
-		//public int rev3dProp;
+	public class FogOfWarRevealer3D : FogOfWarRevealer
+	{
 		private NativeArray<RaycastCommand> RaycastCommandsNative;
 		private NativeArray<RaycastHit> RaycastHits;
-		//private NativeArray<float3> Vector3Directions;
-		private JobHandle IterationOneRaycastJobHandle;
+		private NativeArray<float3> Vector3Directions;
+		private JobHandle IterationOneJobHandle;
 		private Phase1SetupJob SetupJob;
 		private JobHandle SetupJobJobHandle;
-		private GetVector2Data Vector2DataJob;
+		private GetVector2Data DataJob;
 		private JobHandle Vector2NormalJobHandle;
 		private PhysicsScene physicsScene;
-
-		public static PlaneProjection Projection;
 #if UNITY_2022_2_OR_NEWER
 		public QueryParameters RayQueryParameters;
 #endif
-
-#if UNITY_EDITOR
-        static readonly ProfilerMarker PartOneProfilerMarker = new ProfilerMarker("Part One");
-        static readonly ProfilerMarker PartTwoProfilerMarker = new ProfilerMarker("Part Two");
-        static readonly ProfilerMarker PartThreeProfilerMarker = new ProfilerMarker("Part Three");
-#endif
-
-        public readonly struct PlaneProjection
-        {
-            // Indices into float3: 0=x, 1=y, 2=z
-            public readonly int Axis0;      // First 2D axis
-            public readonly int Axis1;      // Second 2D axis  
-            public readonly int HeightAxis; // The "up" axis
-
-            public readonly float3 UpVector;
-
-            public PlaneProjection(FogOfWarWorld.GamePlane plane)
-            {
-                switch (plane)
-                {
-                    case FogOfWarWorld.GamePlane.XZ:
-                        Axis0 = 0; Axis1 = 2; HeightAxis = 1;
-                        UpVector = new float3(0, 1, 0);
-                        break;
-                    case FogOfWarWorld.GamePlane.XY:
-                        Axis0 = 0; Axis1 = 1; HeightAxis = 2;
-                        UpVector = new float3(0, 0, 1);
-                        break;
-                    default: // ZY
-                        Axis0 = 2; Axis1 = 1; HeightAxis = 0;
-                        UpVector = new float3(1, 0, 0);
-                        break;
-                }
-            }
-
-            //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-            //public float2 Project(float3 v)
-            //{
-            //    // Explicit branches that JIT can optimize better
-            //    return (Axis0, Axis1) switch
-            //    {
-            //        (0, 2) => new float2(v.x, v.z),
-            //        (0, 1) => new float2(v.x, v.y),
-            //        _ => new float2(v.z, v.y)
-            //    };
-            //}
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float2 Project(float3 v)
-            {
-                return new float2(v[Axis0], v[Axis1]);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float GetHeight(float3 v)
-            {
-                return v[HeightAxis];
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float3 To3D(float2 v, float height)
-            {
-                float3 result = default;
-                result[Axis0] = v.x;
-                result[Axis1] = v.y;
-                result[HeightAxis] = height;
-                return result;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float3 DirectionFromAngle(float angleDeg)
-            {
-                float s, c;
-                math.sincos(math.radians(angleDeg), out s, out c);
-                float3 dir = default;
-                dir[Axis0] = c;
-                dir[Axis1] = s;
-                dir[HeightAxis] = 0;
-                return dir;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float DistanceSq2D(float3 a, float3 b)
-            {
-                float dx = a[Axis0] - b[Axis0];
-                float dy = a[Axis1] - b[Axis1];
-                return dx * dx + dy * dy;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float Distance2D(float3 a, float3 b)
-            {
-                float dx = a[Axis0] - b[Axis0];
-                float dy = a[Axis1] - b[Axis1];
-                return math.sqrt(dx * dx + dy * dy);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float HeightDifference(float3 a, float3 b)
-            {
-                return math.abs(a[HeightAxis] - b[HeightAxis]);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float3 SetHeight(float3 v, float newHeight)
-            {
-                float3 result = v;
-                result[HeightAxis] = newHeight;
-                return result;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float GetRotationAngle(quaternion rot)
-            {
-                float3 euler = math.degrees(ToEuler(rot));
-                return euler[HeightAxis];
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static float3 ToEuler(quaternion q)
-            {
-                float3 euler;
-
-                // Roll (x)
-                float sinr_cosp = 2f * (q.value.w * q.value.x + q.value.y * q.value.z);
-                float cosr_cosp = 1f - 2f * (q.value.x * q.value.x + q.value.y * q.value.y);
-                euler.x = math.atan2(sinr_cosp, cosr_cosp);
-
-                // Pitch (y)
-                float sinp = 2f * (q.value.w * q.value.y - q.value.z * q.value.x);
-                euler.y = math.abs(sinp) >= 1f ? math.sign(sinp) * math.PI / 2f : math.asin(sinp);
-
-                // Yaw (z)
-                float siny_cosp = 2f * (q.value.w * q.value.z + q.value.x * q.value.y);
-                float cosy_cosp = 1f - 2f * (q.value.y * q.value.y + q.value.z * q.value.z);
-                euler.z = math.atan2(siny_cosp, cosy_cosp);
-
-                return euler;
-            }
-        }
-
-        protected override void _InitRevealer(int StepCount)
+		protected override void _InitRevealer(int StepCount)
 		{
             physicsScene = gameObject.scene.GetPhysicsScene();
 
             //if (RaycastCommands != null)
-            //if (RaycastCommandsNative.IsCreated)
-				//CleanupRevealer();
+            if (RaycastCommandsNative.IsCreated)
+				CleanupRevealer();
 
 			//RaycastCommands = new RaycastCommand[StepCount];
 			RaycastCommandsNative = new NativeArray<RaycastCommand>(StepCount, Allocator.Persistent);
 			RaycastHits = new NativeArray<RaycastHit>(StepCount, Allocator.Persistent);
-			//Vector3Directions = new NativeArray<float3>(StepCount, Allocator.Persistent);
+			Vector3Directions = new NativeArray<float3>(StepCount, Allocator.Persistent);
 
 #if UNITY_2022_2_OR_NEWER
 			RayQueryParameters = new QueryParameters(ObstacleMask, false, QueryTriggerInteraction.UseGlobal, false);
 #endif
-			SetupJob = new Phase1SetupJob()
+            SetupJob = new Phase1SetupJob()
 			{
-				Proj = Projection,
+				GamePlane = (int)FogOfWarWorld.instance.gamePlane,
 				RayAngles = FirstIteration.RayAngles,
-				//Vector3Directions = Vector3Directions,
-				Vector2Directions = FirstIteration.Directions,
+				Vector3Directions = Vector3Directions,
 				RaycastCommandsNative = RaycastCommandsNative,
-#if UNITY_2021_2_OR_NEWER
-                PhysicsScene = physicsScene,
-#endif
-            };
+			};
 
-            Vector2DataJob = new GetVector2Data()
+			DataJob = new GetVector2Data()
 			{
-				Proj = Projection,
+				GamePlane = (int)FogOfWarWorld.instance.gamePlane,
 				RaycastHits = RaycastHits,
 				Hits = FirstIteration.Hits,
 				Distances = FirstIteration.Distances,
 
-				RayDirections = FirstIteration.Directions,
+				InDirections = Vector3Directions,
 				OutPoints = FirstIteration.Points,
+				OutDirections = FirstIteration.Directions,
 				OutNormals = FirstIteration.Normals
 			};
+			for (int i = 0; i < StepCount; i++)
+            {
+				//RaycastCommands[i] = new RaycastCommand(Vector3.zero, Vector3.up, layerMask: ObstacleMask);
+				//RaycastCommands[i].layerMask = ObstacleMask;
+			}
 		}
 
-		protected override void _CleanupRaycastRevealer()
+		protected override void CleanupRevealer()
         {
-			//if (!RaycastCommandsNative.IsCreated)
-			//	return;
-
-            if (RaycastCommandsNative.IsCreated)
-                RaycastCommandsNative.Dispose();
-            if (RaycastHits.IsCreated)
-			    RaycastHits.Dispose();
-			//Vector3Directions.Dispose();
+			if (!RaycastCommandsNative.IsCreated)
+				return;
+			RaycastCommandsNative.Dispose();
+			RaycastHits.Dispose();
+			Vector3Directions.Dispose();
 		}
 		
-		protected override void IterationOne(float firstAngle, float angleStep)
+		protected override void IterationOne(int NumSteps, float firstAngle, float angleStep)
         {
 #if UNITY_EDITOR
-            if (ProfileRevealers) PartOneProfilerMarker.Begin();	//if this is taking a super long time on some frames only, update unity!
+			Profiler.BeginSample("pt1");	//if this is taking a super long time on some frames only, update unity!
 #endif
 			SetupJob.FirstAngle = firstAngle;
 			SetupJob.AngleStep = angleStep;
-			SetupJob.RayDistance = TotalRevealerRadius;
+			SetupJob.RayDistance = RayDistance;
 			SetupJob.EyePosition = EyePosition;
 #if UNITY_2022_2_OR_NEWER
 			RayQueryParameters.layerMask = ObstacleMask;
@@ -237,283 +94,529 @@ namespace FOW
 #else
 			SetupJob.LayerMask = ObstacleMask;
 #endif
-
-			SetupJobJobHandle = SetupJob.ScheduleParallel(FirstIterationStepCount, CommandsPerJob, default(JobHandle));
+			SetupJobJobHandle = SetupJob.Schedule(NumSteps, CommandsPerJob, default(JobHandle));
 
 #if UNITY_EDITOR
 			if (DebugMode && DrawInitialRays)
 			{
 				SetupJobJobHandle.Complete();
-				for (int i = 0; i < FirstIterationStepCount; i++)
+				for (int i = 0; i < NumSteps; i++)
 				{
-					//Debug.DrawRay(EyePosition, Vector3Directions[i] * RayDistance, Color.white);
-                    float2 dir = FirstIteration.Directions[i];
-                    Debug.DrawRay(EyePosition, new Vector3(dir.x, 0, dir.y) * TotalRevealerRadius, Color.white);
+					Debug.DrawRay(EyePosition, Vector3Directions[i] * RayDistance, Color.white);
 				}
 			}
 #endif
 
+			//IterationOneJobHandle = RaycastCommand.ScheduleBatch(RaycastCommandsNative, RaycastHits, 64);
+			//Debug.Log(commandsPerJob);
+			IterationOneJobHandle = RaycastCommand.ScheduleBatch(RaycastCommandsNative, RaycastHits, CommandsPerJob, SetupJobJobHandle);
+			//JobHandle.ScheduleBatchedJobs();
+
+			//IterationOneJobHandle.Complete();
 #if UNITY_EDITOR
-            if (ProfileRevealers) PartOneProfilerMarker.End();
-            if (ProfileRevealers) PartTwoProfilerMarker.Begin();
+			Profiler.EndSample();
+			Profiler.BeginSample("pt2");
 #endif
-            //IterationOneJobHandle = RaycastCommand.ScheduleBatch(RaycastCommandsNative, RaycastHits, 64);
-            //Debug.Log(CommandsPerJob);
-
-            //float raysPerCore = (float)FirstIterationStepCount / Unity.Jobs.LowLevel.Unsafe.JobsUtility.JobWorkerCount;
-            //int raycastBatchSize = Mathf.CeilToInt(raysPerCore);
-            IterationOneRaycastJobHandle = RaycastCommand.ScheduleBatch(RaycastCommandsNative, RaycastHits, 90, SetupJobJobHandle);
-
+			//DataJob.RayDistance = ViewRadius;
+			DataJob.RayDistance = RayDistance;
+			DataJob.EyePosition = EyePosition;
+			//Vector2NormalJobHandle = DataJob.Schedule(NumSteps, 32, IterationOneJobHandle);
+			Vector2NormalJobHandle = DataJob.Schedule(NumSteps, CommandsPerJob, IterationOneJobHandle);
+			//Vector2NormalJobHandle.Complete();
 #if UNITY_EDITOR
-            if (ProfileRevealers) PartTwoProfilerMarker.End();
-            if (ProfileRevealers) PartThreeProfilerMarker.Begin();
+			Profiler.EndSample();
 #endif
-            //Vector2DataJob.RayDistance = ViewRadius;
-            Vector2DataJob.RayDistance = TotalRevealerRadius;
-            Vector2DataJob.ProjectedEyePosition = Projection.Project(EyePosition);
-            //Vector2NormalJobHandle = Vector2DataJob.Schedule(FirstIterationStepCount, 32, IterationOneJobHandle);
 
-            Vector2NormalJobHandle = Vector2DataJob.ScheduleParallel(FirstIterationStepCount, CommandsPerJob, IterationOneRaycastJobHandle);
-            //Vector2NormalJobHandle.Complete();
 
-            PreReqJobHandle = Vector2NormalJobHandle;
-            //PointsJob.SStep = SinStep;
-            //PointsJob.CStep = CosStep;
-            //PointsJobHandle = PointsJob.Schedule(FirstIterationStepCount, CommandsPerJob, Vector2NormalJobHandle);
-#if UNITY_EDITOR
-            if (ProfileRevealers) PartThreeProfilerMarker.End();
-#endif
-        }
+			//PointsJobHandle = PointsJob.Schedule(NumSteps, 32);
+			PointsJobHandle = PointsJob.Schedule(NumSteps, CommandsPerJob, Vector2NormalJobHandle);
+			//PointsJobHandle.Complete();	//now called in phase 2
+		}
 
-        //public new static void PostPhaseOne() //for when i batch all iteration 1
-        //{
-
-        //}
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, OptimizeFor = OptimizeFor.Performance)]
-		struct Phase1SetupJob : IJobFor
+		[BurstCompile]
+		struct Phase1SetupJob : IJobParallelFor
         {
-			public PlaneProjection Proj;
-
+			public int GamePlane;
 			public float FirstAngle;
 			public float AngleStep;
 			public float RayDistance;
-			public float3 EyePosition;
+			public Vector3 EyePosition;
 #if UNITY_2022_2_OR_NEWER
 			public QueryParameters Parameters;
 #else
 			public int LayerMask;
 #endif
-
-#if UNITY_2021_2_OR_NEWER
-            public PhysicsScene PhysicsScene;
-#endif
-
-            [WriteOnly, NoAlias] public NativeArray<float> RayAngles;
-			//[WriteOnly] public NativeArray<float3> Vector3Directions;
-			[WriteOnly, NoAlias] public NativeArray<float2> Vector2Directions;
-			[WriteOnly, NoAlias] public NativeArray<RaycastCommand> RaycastCommandsNative;
-            
+			[WriteOnly] public NativeArray<float> RayAngles;
+			[WriteOnly] public NativeArray<float3> Vector3Directions;
+			[WriteOnly] public NativeArray<RaycastCommand> RaycastCommandsNative;
+			public PhysicsScene PhysicsScene;
 			public void Execute(int id)
             {
-                //float angle = FirstAngle + (AngleStep * id);
-                float angle = math.mad(AngleStep, id, FirstAngle);
-                RayAngles[id] = angle;
-                float3 dir = Proj.DirectionFromAngle(angle);
-                //Vector3Directions[id] = dir;
-                Vector2Directions[id] = Proj.Project(dir);
+				float angle = FirstAngle + (AngleStep * id);
+				RayAngles[id] = angle;
+				float3 dir = DirFromAngle(angle);
+				Vector3Directions[id] = dir;
 
 #if UNITY_2022_2_OR_NEWER
-				RaycastCommandsNative[id] = new RaycastCommand(PhysicsScene, EyePosition, dir, Parameters, RayDistance);
-#elif UNITY_2021_2_OR_NEWER
-                RaycastCommandsNative[id] = new RaycastCommand(PhysicsScene, EyePosition, dir, RayDistance, layerMask: LayerMask, maxHits: 1);
+				RaycastCommandsNative[id] = new RaycastCommand(EyePosition, dir, Parameters, RayDistance);
 #else
-                RaycastCommandsNative[id] = new RaycastCommand(EyePosition, dir, RayDistance, layerMask: LayerMask);
+				RaycastCommandsNative[id] = new RaycastCommand(EyePosition, dir, RayDistance, layerMask: LayerMask);
 #endif
-            }
-        }
-
-		[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, OptimizeFor = OptimizeFor.Performance)]
-		struct GetVector2Data : IJobFor
-        {
-            public PlaneProjection Proj;
-            public float RayDistance;
-			public float2 ProjectedEyePosition;
+			}
+			float3 DirFromAngle(float angleInDegrees)
+			{
+				float3 direction = new float3();
+				switch (GamePlane)
+				{
+					case 0:
+						direction.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+						direction.z = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+						return direction;
+					case 1:
+						direction.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+						direction.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+						return direction;
+					case 2: break;
+				}
+				direction.z = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+				direction.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+				return direction;
+			}
+		}
+		[BurstCompile]
+		struct GetVector2Data : IJobParallelFor
+		{
+			public int GamePlane;
+			public float RayDistance;
+			public float3 EyePosition;
 			[ReadOnly] public NativeArray<RaycastHit> RaycastHits;
-			[ReadOnly] public NativeArray<float2> RayDirections;
+			[WriteOnly] public NativeArray<bool> Hits;
+			[WriteOnly] public NativeArray<float> Distances;
 
-            [WriteOnly, NoAlias] public NativeArray<bool> Hits;
-            [WriteOnly, NoAlias] public NativeArray<float> Distances;
-            [WriteOnly, NoAlias] public NativeArray<float2> OutPoints;
-			[WriteOnly, NoAlias] public NativeArray<float2> OutNormals;
+			[ReadOnly] public NativeArray<float3> InDirections;
+			[WriteOnly] public NativeArray<float2> OutPoints;
+			[WriteOnly] public NativeArray<float2> OutDirections;
+			[WriteOnly] public NativeArray<float2> OutNormals;
 			public void Execute(int id)
 			{
-                float hitDist = RaycastHits[id].distance;
-                bool hit = hitDist > 0f;
+				//if (RaycastHits[id].distance)
+				float3 point3d;
+				float3 normal3d;
+				//if (!approximately(RaycastHits[id].distance, RayDistance))
+				if (!approximately(RaycastHits[id].distance, 0))
+				{
+					Hits[id] = true;
+					Distances[id] = RaycastHits[id].distance;
+					point3d = RaycastHits[id].point;
+					normal3d = RaycastHits[id].normal;
+				}
+				else
+				{
+					Hits[id] = false;
+					Distances[id] = RayDistance;
+					point3d = EyePosition + (InDirections[id] * RayDistance);
+					normal3d = -InDirections[id];
+				}
+				float2 point = new float2();
+				float2 direction = new float2();
+				float2 norm = new float2();
+				switch (GamePlane)
+				{
+					case 0:
+						point.x = point3d.x;
+						point.y = point3d.z;
 
-                float dist = math.select(RayDistance, hitDist, hit);
-                float2 dir = RayDirections[id];
-                float2 point = ProjectedEyePosition + dir * dist;
+						direction.x = InDirections[id].x;
+						direction.y = InDirections[id].z;
 
-                // For normal: if hit, project and normalize; if miss, negate direction
-                float2 projectedNormal = math.normalizesafe(Proj.Project(RaycastHits[id].normal));
-                float2 hitNormal = math.select(-dir, projectedNormal, hit);
+						norm.x = normal3d.x;
+						norm.y = normal3d.z;
+						break;
+					case 1:
+						point.x = point3d.x;
+						point.y = point3d.y;
 
-                Hits[id] = hit;
-                Distances[id] = dist;
-                OutPoints[id] = point;
-                OutNormals[id] = hitNormal;
+						direction.x = InDirections[id].x;
+						direction.y = InDirections[id].y;
+
+						norm.x = normal3d.x;
+						norm.y = normal3d.y;
+						break;
+					case 2:
+						point.x = point3d.z;
+						point.y = point3d.y;
+
+						direction.x = InDirections[id].z;
+						direction.y = InDirections[id].y;
+
+						norm.x = normal3d.z;
+						norm.y = normal3d.y;
+						break;
+				}
+				OutPoints[id] = point;
+				OutDirections[id] = math.normalize(direction);
+				//OutDirections[id] = direction.normalized;
+				OutNormals[id] = math.normalize(norm);
+				//OutNormals[id] = norm.normalized;
+			}
+
+			bool approximately(float a, float b)
+			{
+				return math.abs(b - a) < math.max(0.000001f * math.max(math.abs(a), math.abs(b)), math.EPSILON * 8);
 			}
 		}
 
-        RaycastHit RayHit;
+		protected override void _FindEdge()
+        {
+			NativeArray<RaycastCommand> EdgeRaycastCommands = new NativeArray<RaycastCommand>(NumberOfPoints, Allocator.TempJob);
+			NativeArray<float3> RayDirections = new NativeArray<float3>(NumberOfPoints, Allocator.TempJob);
+
+			NativeArray<SightRay> SightRayArray = new NativeArray<SightRay>(NumberOfPoints, Allocator.TempJob);
+			NativeArray<SightSegment> SightSeg = new NativeArray<SightSegment>(ViewPoints, Allocator.TempJob);
+			NativeArray<EdgeResolveData> EdgeResolveArray = new NativeArray<EdgeResolveData>(NumberOfPoints, Allocator.TempJob);
+
+			EdgeJob.SightRays = SightRayArray;
+			EdgeJob.SightSegments = SightSeg;
+			EdgeJob.EdgeData = EdgeResolveArray;
+			EdgeJob.EdgeNormals = new NativeArray<float2>(EdgeNormals, Allocator.TempJob);
+			EdgeJob.MaxAcceptableEdgeAngleDifference = MaxAcceptableEdgeAngleDifference;
+			EdgeJob.DoubleHitMaxAngleDelta = DoubleHitMaxAngleDelta;
+			EdgeJob.EdgeDstThreshold = EdgeDstThreshold;
+
+			for (int i = 0; i < NumberOfPoints; i++)
+			{
+				//EdgeRaycastCommands[i] = new RaycastCommand(EyePosition, Vector3Directions[i], RayDistance, layerMask: ObstacleMask);
+				//RayCast(currentAngle, ref currentRay);
+				EdgeResolveData data = new EdgeResolveData();
+				data.CurrentAngle = ViewPoints[i].Angle;
+				data.AngleAdd = EdgeAngles[i];
+				data.Sign = 1;
+
+				data.AngleAdd /= 2;
+				data.CurrentAngle += data.AngleAdd;
+				data.Break = false;
+				EdgeResolveArray[i] = data;
+			}
+			for (int r = 0; r < MaxEdgeResolveIterations; r++)
+			{
+				//if (EdgeResolveArray[r].Break)
+				//	continue;
+                for (int i = 0; i < NumberOfPoints; i++)
+                {
+					//RayCast(currentAngle, ref currentRay);
+					RayDirections[i] = DirFromAngle(EdgeResolveArray[i].CurrentAngle, true);
+#if UNITY_2022_2_OR_NEWER
+					EdgeRaycastCommands[i] = new RaycastCommand(EyePosition, RayDirections[i], RayQueryParameters, RayDistance);
+#else
+					EdgeRaycastCommands[i] = new RaycastCommand(EyePosition, RayDirections[i], RayDistance, layerMask: ObstacleMask);
+#endif
+				}
+                JobHandle rayCastJobHandle = RaycastCommand.ScheduleBatch(EdgeRaycastCommands, RaycastHits, CommandsPerJob, default(JobHandle));
+				SightRayFromRaycastHit SightRayJob = new SightRayFromRaycastHit()
+				{
+					GamePlane = (int)FogOfWarWorld.instance.gamePlane,
+					RayDistance = RayDistance,
+					EyePosition = EyePosition,
+					RaycastHits = RaycastHits,
+					SightRays = SightRayArray,
+					InDirections = RayDirections,
+				};
+                JobHandle SightRayHandle = SightRayJob.Schedule(NumberOfPoints, CommandsPerJob, rayCastJobHandle);
+				EdgeJobHandle = EdgeJob.Schedule(NumberOfPoints, CommandsPerJob, SightRayHandle);
+                EdgeJobHandle.Complete();
+            }
+            ViewPoints = SightSeg.ToArray();
+			EdgeRaycastCommands.Dispose();
+			RayDirections.Dispose();
+			SightRayArray.Dispose();
+			SightSeg.Dispose();
+			EdgeResolveArray.Dispose();
+			EdgeJob.EdgeNormals.Dispose();
+		}
+
+		[BurstCompile]
+		struct SightRayFromRaycastHit : IJobParallelFor
+		{
+			public int GamePlane;
+			public float RayDistance;
+			public float3 EyePosition;
+			[ReadOnly] public NativeArray<RaycastHit> RaycastHits;
+			[ReadOnly] public NativeArray<float3> InDirections;
+			[WriteOnly] public NativeArray<SightRay> SightRays;
+			public void Execute(int id)
+			{
+				SightRay ray = new SightRay();
+				float3 point3d;
+				float3 normal3d;
+				if (!approximately(RaycastHits[id].distance, 0))
+				{
+					ray.hit = true;
+					ray.distance = RaycastHits[id].distance;
+					point3d = RaycastHits[id].point;
+					normal3d = RaycastHits[id].normal;
+				}
+				else
+				{
+					ray.hit = false;
+					ray.distance = RayDistance;
+					point3d = EyePosition + (InDirections[id] * RayDistance);
+					normal3d = -InDirections[id];
+				}
+				float2 point = new float2();
+				float2 direction = new float2();
+				float2 norm = new float2();
+				switch (GamePlane)
+				{
+					case 0:
+						point.x = point3d.x;
+						point.y = point3d.z;
+
+						direction.x = InDirections[id].x;
+						direction.y = InDirections[id].z;
+
+						norm.x = normal3d.x;
+						norm.y = normal3d.z;
+						break;
+					case 1:
+						point.x = point3d.x;
+						point.y = point3d.y;
+
+						direction.x = InDirections[id].x;
+						direction.y = InDirections[id].y;
+
+						norm.x = normal3d.x;
+						norm.y = normal3d.y;
+						break;
+					case 2:
+						point.x = point3d.z;
+						point.y = point3d.y;
+
+						direction.x = InDirections[id].z;
+						direction.y = InDirections[id].y;
+
+						norm.x = normal3d.z;
+						norm.y = normal3d.y;
+						break;
+				}
+				ray.point = point;
+				ray.direction = math.normalize(direction);
+				//OutDirections[id] = direction.normalized;
+				ray.normal = math.normalize(norm);
+				//OutNormals[id] = norm.normalized;
+
+				SightRays[id] = ray;
+			}
+
+			bool approximately(float a, float b)
+			{
+				return math.abs(b - a) < math.max(0.000001f * math.max(math.abs(a), math.abs(b)), math.EPSILON * 8);
+			}
+		}
+
+		RaycastHit RayHit;
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		protected override void RayCast(float angle, ref SightRay ray)
         {
-			float3 direction = DirFromAngle(angle);
+			Vector3 direction = DirFromAngle(angle, true);
 			ray.angle = angle;
 			ray.direction = GetVector2D(direction);
-			if (physicsScene.Raycast(EyePosition, direction, out RayHit, TotalRevealerRadius, ObstacleMask))
+			if (physicsScene.Raycast(EyePosition, direction, out RayHit, RayDistance, ObstacleMask))
             {
 				ray.hit = true;
-				ray.normal = math.normalizesafe(GetVector2D(RayHit.normal));
+				ray.normal = GetVector2D(RayHit.normal);
 				ray.distance = RayHit.distance;
 				ray.point = GetVector2D(RayHit.point);
 			}
 			else
             {
 				ray.hit = false;
+				//ray.normal = GetVector2D(Vector3.up);
 				ray.normal = -ray.direction;
-				ray.distance = TotalRevealerRadius;
-				//ray.point = GetVector2D(CachedTransform.position) + (ray.direction * RayDistance);
-                ray.point = GetVector2D(EyePosition) + ray.direction * TotalRevealerRadius;
-            }
+				ray.distance = RayDistance;
+				ray.point = GetVector2D(CachedTransform.position) + (ray.direction * RayDistance);
+			}
 		}
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float2 GetVector2D(float3 v)
+		float2 vec2d;
+		float2 GetVector2D(Vector3 vector)
         {
-            return Projection.Project(v);
+			switch (FogOfWarWorld.instance.gamePlane)
+			{
+				case FogOfWarWorld.GamePlane.XZ:
+					vec2d.x = vector.x;
+					vec2d.y = vector.z;
+					return vec2d;
+				case FogOfWarWorld.GamePlane.XY:
+					vec2d.x = vector.x;
+					vec2d.y = vector.y;
+					return vec2d;
+				case FogOfWarWorld.GamePlane.ZY:
+					vec2d.x = vector.z;
+					vec2d.y = vector.y;
+					return vec2d;
+			}
+			vec2d.x = vector.x;
+			vec2d.y = vector.z;
+			return vec2d;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override float GetEyeRotation()
+		protected override float GetEuler()
         {
-            //float2 forward2D = Projection.Project(GetForward());
-            return math.degrees(math.atan2(ForwardVectorProjectedCached.x, ForwardVectorProjectedCached.y));
+            switch (FogOfWarWorld.instance.gamePlane)
+            {
+                case FogOfWarWorld.GamePlane.XZ: return CachedTransform.eulerAngles.y;
+                case FogOfWarWorld.GamePlane.XY:
+					Vector3 up = CachedTransform.up;
+					up.z = 0;
+					up.Normalize();
+					float ang = Vector3.SignedAngle(up, Vector3.up, FogOfWarWorld.UpVector);
+					return -ang;
+					//return -CachedTransform.rotation.eulerAngles.z;
+                case FogOfWarWorld.GamePlane.ZY:
+					Vector3 upz = CachedTransform.up;
+					upz.x = 0;
+					upz.Normalize();
+					float angz = Vector3.SignedAngle(upz, Vector3.up, FogOfWarWorld.UpVector);
+					return -angz;
+					//return CachedTransform.eulerAngles.x;
+			}
+			return CachedTransform.eulerAngles.y;
         }
 
-		public override float3 GetEyePosition()
+		public override Vector3 GetEyePosition()
         {
-            float3 eyePos = (float3)CachedTransform.position + FogOfWarWorld.UpVector * EyeOffset;
+			Vector3 eyePos = CachedTransform.position + FogOfWarWorld.UpVector * EyeOffset;
 			if (FogOfWarWorld.instance.PixelateFog && FogOfWarWorld.instance.RoundRevealerPosition)
             {
 				eyePos *= FogOfWarWorld.instance.PixelDensity;
-                float3 PixelGridOffset = new float3(FogOfWarWorld.instance.PixelGridOffset.x, 0, FogOfWarWorld.instance.PixelGridOffset.y);
+				Vector3 PixelGridOffset = new Vector3(FogOfWarWorld.instance.PixelGridOffset.x, 0, FogOfWarWorld.instance.PixelGridOffset.y);
 				eyePos -= PixelGridOffset;
-				eyePos = (float3)(math.round(eyePos));
+				eyePos = (Vector3)(Vector3Int.RoundToInt(eyePos));
 				eyePos += PixelGridOffset;
 				eyePos /= FogOfWarWorld.instance.PixelDensity;
 			}
 			return eyePos;
 		}
 
-		//[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		protected override bool CanSeeHider(FogOfWarHider hiderInQuestion, float2 hiderPosition)
-        {
-            float maxSampleDist = hiderInQuestion.MaxSamplePointLocalPosition;
-            float distSqToHider = FogMath2D.DistanceSq(hiderPosition, RevealerPosition);
-
-            if (maxSampleDist == 0)     //fast path for hiders with 1 sample point
-            {
-                if (distSqToHider > hiderSightDistSq)
-                    return false;
-            }
-            else
-            {
-                // Expand search radius by max sample offset so we don't miss hiders 
-                // whose origin is outside range but sample points are inside
-                float threshold = hiderSightDist + maxSampleDist;
-                if (distSqToHider > threshold * threshold)
-                    return false;
-            }
-
-            //return false;
-
-            float heightDist = Projection.HeightDifference(EyePosition, hiderInQuestion.SamplePoints[0].position) - maxSampleDist;
-
-            if (heightDist > hiderHeightSightDist)
-                return false;
-
-            if (maxSampleDist == 0)   //if only one sample point, then skip loop and extra distance calcs
-                return CanSeeWorldPositionPartTwo(distSqToHider, hiderInQuestion.SamplePoints[0].position);
-
-            for (int j = 0; j < hiderInQuestion.SamplePoints.Length; j++)
-            {
-                if (CanSeeHiderExtraSamplePoint(hiderInQuestion.SamplePoints[j]))
-                    return true;
-            }
-
-            return false;
-		}
-		
-		bool CanSeeHiderExtraSamplePoint(Transform samplePoint)
+		Vector3 hiderPosition;
+		Vector3 revealerOrigin;
+		private float unobscuredSightDist;
+		protected override void _RevealHiders()
 		{
-			return CanSeeWorldPosition(samplePoint.position);
-        }
-        
-        bool CanSeeWorldPosition(float3 samplePointPosition)
-        {
-            float heightDist = Projection.HeightDifference(EyePosition, samplePointPosition);
-            if (heightDist > hiderHeightSightDist)
-                return false;
+#if UNITY_EDITOR
+			Profiler.BeginSample("Revealing Hiders");
+#endif
+			FogOfWarHider hiderInQuestion;
+			//float distToHider;
+			//float heightDist = 0;
+			EyePosition = GetEyePosition();
+			ForwardVectorCached = GetForward();
+			float sightDist = ViewRadius;
+			if (FogOfWarWorld.instance.UsingSoftening)
+				sightDist += RevealHiderInFadeOutZonePercentage * SoftenDistance;
 
-            float sqDistToPoint = Projection.DistanceSq2D(samplePointPosition, EyePosition);
-            if (sqDistToPoint > hiderSightDistSq)
-                return false;
+			unobscuredSightDist = UnobscuredRadius;
+			if (FogOfWarWorld.instance.UsingSoftening)
+				unobscuredSightDist += RevealHiderInFadeOutZonePercentage * FogOfWarWorld.instance.UnobscuredSoftenDistance;
 
-            return CanSeeWorldPositionPartTwo(sqDistToPoint, samplePointPosition);
+			sightDist = Mathf.Max(sightDist, UnobscuredRadius);
+			//foreach (FogOfWarHider hiderInQuestion in FogOfWarWorld.HidersList)
+			for (int i = 0; i < Mathf.Min(MaxHidersSampledPerFrame, FogOfWarWorld.NumHiders); i++)
+			{
+				_lastHiderIndex = (_lastHiderIndex + 1) % FogOfWarWorld.NumHiders;
+				hiderInQuestion = FogOfWarWorld.HidersList[_lastHiderIndex];
+				float minDistToHider = DistBetweenVectors(hiderInQuestion.CachedTransform.position, EyePosition) - hiderInQuestion.MaxDistBetweenSamplePoints;
+				bool seen = CanSeeHider(hiderInQuestion, sightDist, minDistToHider);
+
+                if (UnobscuredRadius < 0 && (minDistToHider + 1.5f * hiderInQuestion.MaxDistBetweenSamplePoints) < -UnobscuredRadius)
+					seen = false;
+
+				if (seen)
+                {
+					if (!HidersSeen.Contains(hiderInQuestion))
+					{
+						HidersSeen.Add(hiderInQuestion);
+						hiderInQuestion.AddObserver(this);
+					}
+				}
+				else
+                {
+					if (HidersSeen.Contains(hiderInQuestion))
+					{
+						HidersSeen.Remove(hiderInQuestion);
+						hiderInQuestion.RemoveObserver(this);
+					}
+				}
+			}
+#if UNITY_EDITOR
+			Profiler.EndSample();
+#endif
 		}
 
-        float3 hiderPosition;
-        float3 revealerOrigin;
-        //part 2 handles vision angle + occlusion
-        bool CanSeeWorldPositionPartTwo(float sqDistToPoint, float3 samplePointPosition)
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		bool CanSeeHider(FogOfWarHider hiderInQuestion, float sightDist, float minDistToHider)
         {
-            if (sqDistToPoint < unobscuredHiderSightDistSq)
-                return unobscuredRadius >= 0;   //for negative ubobscured radius
+			//float minDistToHider = DistBetweenVectors(hiderInQuestion.CachedTransform.position, EyePosition) - hiderInQuestion.MaxDistBetweenSamplePoints;
 
-            if (IsInFOV(samplePointPosition - EyePosition, ForwardVectorProjectedCached))
+			if (minDistToHider > sightDist)
+				return false;
+
+			for (int j = 0; j < hiderInQuestion.SamplePoints.Length; j++)
             {
-                if (!useOcclusion)
-                    return true;
+				if (CanSeeHiderSamplePoint(hiderInQuestion.SamplePoints[j], sightDist))
+					return true;
+            }
 
-                revealerOrigin = EyePosition;
-                if (SetHiderRayOriginToHidersHeight)
-                    SetRevealerOrigin(EyePosition, samplePointPosition);
+			return false;
+		}
 
-                hiderPosition = samplePointPosition;
-                if (SetHiderRayDestinationToRevealersHeight)
-                    SetHiderPositionToMyHeight(samplePointPosition, EyePosition);
-                //else
-                //	hiderPosition = samplePointPosition;
+		float heightDist;
+		bool CanSeeHiderSamplePoint(Transform samplePoint, float sightDist)
+        {
+			float distToHider = DistBetweenVectors(samplePoint.position, EyePosition);
 
-                float distToPoint = math.sqrt(sqDistToPoint);
-                if (!physicsScene.Raycast(revealerOrigin, hiderPosition - revealerOrigin, out RayHit, distToPoint, ObstacleMask))
-                {
+			if (distToHider < unobscuredSightDist)
+				return true;
+
+			switch (FogOfWarWorld.instance.gamePlane)
+			{
+				case FogOfWarWorld.GamePlane.XZ: heightDist = Mathf.Abs(EyePosition.y - samplePoint.position.y); break;
+				case FogOfWarWorld.GamePlane.XY: heightDist = Mathf.Abs(EyePosition.z - samplePoint.position.z); break;
+				case FogOfWarWorld.GamePlane.ZY: heightDist = Mathf.Abs(EyePosition.x - samplePoint.position.x); break;
+			}
+
+			if (heightDist > VisionHeight)
+				return false;
+
+			//if ((distToHider < sightDist && Mathf.Abs(AngleBetweenVector2(samplePoint.position - EyePosition, ForwardVectorCached)) <= ViewAngle / 2))
+			if (Mathf.Abs(AngleBetweenVector2(samplePoint.position - EyePosition, ForwardVectorCached)) <= ViewAngle / 2)
+			{
+				revealerOrigin = EyePosition;
+				if (CalculateHidersAtHiderHeight)
+					SetRevealerOrigin(EyePosition, samplePoint.position);
+
+                hiderPosition = samplePoint.position;
+                if (SampleHidersAtRevealerHeight)
+					SetHiderPosition(samplePoint.position, EyePosition);
+				//else
+				//	hiderPosition = samplePoint.position;
+
+
+				if (!physicsScene.Raycast(revealerOrigin, hiderPosition - revealerOrigin, out RayHit, distToHider, ObstacleMask))
+				{
 #if UNITY_EDITOR
                     if (DrawHiderSamples)
                         Debug.DrawLine(revealerOrigin, hiderPosition, Color.green);
 #endif
                     return true;
-                }
+				}
 #if UNITY_EDITOR
                 else
-                {
-                    if (DebugLogHiderBlockerName)
-                        Debug.Log(RayHit.collider.gameObject.name);
+				{
+					if (DebugLogHiderBlockerName)
+						Debug.Log(RayHit.collider.gameObject.name);
                     if (DrawHiderSamples)
-                    {
+					{
                         Debug.DrawLine(revealerOrigin, RayHit.point, Color.green);
                         Debug.DrawLine(RayHit.point, hiderPosition, Color.red);
                     }
@@ -522,74 +625,203 @@ namespace FOW
             }
 
             return false;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool IsInFOV(float3 dirToTarget, float2 forwardProjected)
-        {
-            if (CircleIsComplete)
-                return true;
-            float2 dirProjected = math.normalize(Projection.Project(dirToTarget));
-            return math.dot(dirProjected, forwardProjected) >= cosHalfViewAngle;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void SetHiderPositionToMyHeight(float3 point, float3 eyePosition)
-        {
-            hiderPosition = Projection.SetHeight(point, Projection.GetHeight(eyePosition));
 		}
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void SetRevealerOrigin(float3 point, float3 _hiderPosition)
+		void SetHiderPosition(Vector3 point, Vector3 eyePosition)
         {
-            revealerOrigin = Projection.SetHeight(point, Projection.GetHeight(_hiderPosition));
-        }
-
-        protected override bool _TestPoint(float3 point)
-        {
-            return CanSeeWorldPosition(point);
-            //EyePosition = GetEyePosition();
-            //ForwardVectorCached = GetForward();
-            //float distToPoint = DistBetweenVectors(point, EyePosition);
-            //         bool inFov = math.abs(AngleBetweenVector2(point - EyePosition, ForwardVectorCached)) < (ViewAngle * 0.5f);
-            //         if (distToPoint < UnobscuredRadius || (distToPoint < sightDist && inFov))
-            //{
-            //	SetHiderPositionToMyHeight(point, EyePosition);
-            //	if (!physicsScene.Raycast(EyePosition, hiderPosition - EyePosition, distToPoint, ObstacleMask))
-            //		return true;
-            //}
-            //return false;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void SetPositionAndHeight()
-        {
-            RevealerPosition = Projection.Project(EyePosition);
-            RevealerHeightPosition = Projection.GetHeight(EyePosition);
+			switch (FogOfWarWorld.instance.gamePlane)
+			{
+				case FogOfWarWorld.GamePlane.XZ:
+					//hiderPosition.x = point.x;
+					hiderPosition.y = eyePosition.y;
+					//hiderPosition.z = point.z;
+					break;
+				case FogOfWarWorld.GamePlane.XY:
+					//hiderPosition.x = point.x;
+					//hiderPosition.y = point.y;
+					hiderPosition.z = eyePosition.z;
+					break;
+				case FogOfWarWorld.GamePlane.ZY:
+					hiderPosition.x = eyePosition.x;
+					//hiderPosition.y = point.y;
+					//hiderPosition.z = point.z;
+					break;
+			}
 		}
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override float AngleBetweenVector2(float3 _vec1, float3 _vec2)
+        void SetRevealerOrigin(Vector3 point, Vector3 _hiderPosition)
+        {
+            switch (FogOfWarWorld.instance.gamePlane)
+            {
+                case FogOfWarWorld.GamePlane.XZ:
+                    revealerOrigin.y = _hiderPosition.y;
+                    break;
+                case FogOfWarWorld.GamePlane.XY:
+                    revealerOrigin.z = _hiderPosition.z;
+                    break;
+                case FogOfWarWorld.GamePlane.ZY:
+                    revealerOrigin.x = _hiderPosition.x;
+                    break;
+            }
+        }
+
+        protected override bool _TestPoint(Vector3 point)
+        {
+			float sightDist = ViewRadius;
+			if (FogOfWarWorld.instance.UsingSoftening)
+				sightDist += RevealHiderInFadeOutZonePercentage * SoftenDistance;
+
+			EyePosition = GetEyePosition();
+			ForwardVectorCached = GetForward();
+			float distToPoint = DistBetweenVectors(point, EyePosition);
+			if (distToPoint < UnobscuredRadius || (distToPoint < sightDist && Mathf.Abs(AngleBetweenVector2(point - EyePosition, ForwardVectorCached)) < ViewAngle / 2))
+			{
+				SetHiderPosition(point, EyePosition);
+				if (!physicsScene.Raycast(EyePosition, hiderPosition - CachedTransform.position, distToPoint, ObstacleMask))
+					return true;
+			}
+			return false;
+		}
+
+		protected override void SetCenterAndHeight()
+        {
+			switch (FogOfWarWorld.instance.gamePlane)
+			{
+				case FogOfWarWorld.GamePlane.XZ:
+					center.x = EyePosition.x;
+					center.y = EyePosition.z;
+					heightPos = EyePosition.y;
+					break;
+				case FogOfWarWorld.GamePlane.XY:
+					center.x = EyePosition.x;
+					center.y = EyePosition.y;
+					heightPos = EyePosition.z;
+					break;
+				case FogOfWarWorld.GamePlane.ZY:
+					center.x = EyePosition.z;
+					center.y = EyePosition.y;
+					heightPos = EyePosition.x;
+					break;
+			}
+		}
+
+		Vector2 vec1;
+		Vector2 vec2;
+		Vector2 _vec1Rotated90;
+		protected override float AngleBetweenVector2(Vector3 _vec1, Vector3 _vec2)
 		{
-            return FogMath2D.SignedAngleDeg(Projection.Project(_vec1), Projection.Project(_vec2));
-        }
+            switch (FogOfWarWorld.instance.gamePlane)
+            {
+                case FogOfWarWorld.GamePlane.XZ:
+                    vec1.x = _vec1.x;
+                    vec1.y = _vec1.z;
+                    vec2.x = _vec2.x;
+                    vec2.y = _vec2.z;
+                    break;
+                case FogOfWarWorld.GamePlane.XY:
+                    vec1.x = _vec1.x;
+                    vec1.y = _vec1.y;
+                    vec2.x = _vec2.x;
+                    vec2.y = _vec2.y;
+                    break;
+                case FogOfWarWorld.GamePlane.ZY:
+                    vec1.x = _vec1.z;
+                    vec1.y = _vec1.y;
+                    vec2.x = _vec2.z;
+                    vec2.y = _vec2.y;
+                    break;
+            }
 
-        protected override void SetCachedForward()
-        {
-            ForwardVectorCached = Projection.HeightAxis == 1 ? CachedTransform.forward : CachedTransform.up;
-            ForwardVectorProjectedCached = math.normalize(Projection.Project(ForwardVectorCached));
-        }
-
+			//vec1 = vec1.normalized;
+			//vec2 = vec2.normalized;
+			_vec1Rotated90.x = -vec1.y;
+			_vec1Rotated90.y = vec1.x;
+			//Vector2 vec1Rotated90 = new Vector2(-vec1.y, vec1.x);
+			float sign = (Vector2.Dot(_vec1Rotated90, vec2) < 0) ? -1.0f : 1.0f;
+			return Vector2.Angle(vec1, vec2) * sign;
+		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public override float3 DirFromAngle(float angleInDegrees)
+		float DistBetweenVectors(Vector3 _vec1, Vector3 _vec2)
 		{
-            return Projection.DirectionFromAngle(angleInDegrees);
+            switch (FogOfWarWorld.instance.gamePlane)
+            {
+                case FogOfWarWorld.GamePlane.XZ:
+                    vec1.x = _vec1.x;
+                    vec1.y = _vec1.z;
+                    vec2.x = _vec2.x;
+                    vec2.y = _vec2.z;
+                    break;
+                case FogOfWarWorld.GamePlane.XY:
+                    
+                    break;
+                case FogOfWarWorld.GamePlane.ZY:
+                    vec1.x = _vec1.z;
+                    vec1.y = _vec1.y;
+                    vec2.x = _vec2.z;
+                    vec2.y = _vec2.y;
+                    break;
+            }
+            //return Vector2.SqrMagnitude(vec1 - vec2);
+            return Vector2.Distance(vec1, vec2);
 		}
 
-		protected override float3 _Get3DPositionfrom2D(float2 pos)
+		Vector3 ForwardVectorCached;
+        Vector3 GetForward()
         {
-            return Projection.To3D(pos, Projection.GetHeight(CachedTransform.position));
+            switch (FogOfWarWorld.instance.gamePlane)
+            {
+                case FogOfWarWorld.GamePlane.XZ: return CachedTransform.forward;
+				case FogOfWarWorld.GamePlane.XY: return CachedTransform.up;
+				//case FogOfWarWorld.GamePlane.XY: return new Vector3(-CachedTransform.up.x, CachedTransform.up.y, 0).normalized;
+				//case FogOfWarWorld.GamePlane.XY: return -CachedTransform.right;
+				case FogOfWarWorld.GamePlane.ZY: return CachedTransform.up;
+            }
+            return CachedTransform.forward;
+        }
+
+		Vector3 direction = Vector3.zero;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public override Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
+		{
+            switch (FogOfWarWorld.instance.gamePlane)
+            {
+                case FogOfWarWorld.GamePlane.XZ:
+                    if (!angleIsGlobal)
+                    {
+                        angleInDegrees += CachedTransform.eulerAngles.y;
+                    }
+                    direction.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+                    direction.z = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+                    return direction;
+                case FogOfWarWorld.GamePlane.XY:
+                    if (!angleIsGlobal)
+                    {
+                        angleInDegrees += CachedTransform.eulerAngles.z;
+                    }
+                    direction.x = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+                    direction.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+                    return direction;
+                case FogOfWarWorld.GamePlane.ZY: break;
+            }
+            if (!angleIsGlobal)
+            {
+                angleInDegrees += CachedTransform.eulerAngles.x;
+            }
+            direction.z = Mathf.Cos(angleInDegrees * Mathf.Deg2Rad);
+            direction.y = Mathf.Sin(angleInDegrees * Mathf.Deg2Rad);
+            return direction;
+        }
+
+        protected override Vector3 _Get3Dfrom2D(Vector2 pos)
+        {
+			switch (FogOfWarWorld.instance.gamePlane)
+            {
+				case FogOfWarWorld.GamePlane.XZ: return new Vector3(pos.x, CachedTransform.position.y, pos.y);
+				case FogOfWarWorld.GamePlane.XY: return new Vector3(pos.x, pos.y, CachedTransform.position.z);
+				case FogOfWarWorld.GamePlane.ZY: return new Vector3(CachedTransform.position.x, pos.y, pos.x);
+			}
+			return new Vector3(pos.x, CachedTransform.position.y, pos.y);
 		}
     }
 }

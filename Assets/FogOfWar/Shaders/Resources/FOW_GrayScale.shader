@@ -8,12 +8,12 @@ Shader "Hidden/FullScreen/FOW/GrayScale"
         Pass
         {
             HLSLPROGRAM
-            #pragma multi_compile_local _ IS_2D
+            #pragma multi_compile_local IS_2D IS_3D
 
             #pragma vertex Vert
             #pragma fragment Frag
 
-            #include_with_pragmas "../FogOfWarLogic.hlsl"
+            #include_with_pragmas "FogOfWarLogic.hlsl"
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
@@ -23,17 +23,19 @@ Shader "Hidden/FullScreen/FOW/GrayScale"
             #if UNITY_VERSION <= 202310
             uniform float4 _BlitTexture_TexelSize;
             #endif
-            
-            float4x4 _inverseProjectionMatrix;
-            float4x4 _camToWorldMatrix;
 
-            float4 _unKnownColor;
             float _maxDistance;
-
+            float2 _fowTiling;
+            float _fowScrollSpeed;
+            float4 _unKnownColor;
             float _saturationStrength;
+
+            float4x4 _camToWorldMatrix;
+            float4x4 _inverseProjectionMatrix;
 
             float4 Frag (Varyings i) : SV_Target
             {
+                //float4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
                 float4 color = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_LinearRepeat, i.texcoord, _BlitMipLevel);
 
                 float2 pos;
@@ -44,7 +46,7 @@ Shader "Hidden/FullScreen/FOW/GrayScale"
                 pos+= _cameraPosition;
                 FOW_Rotate_Degrees_float(pos, _cameraPosition, -_cameraRotation, pos);
                 height = 0;
-            #else
+            #elif IS_3D
                 float2 uv = i.texcoord;
 
             #if UNITY_REVERSED_Z
@@ -67,7 +69,7 @@ Shader "Hidden/FullScreen/FOW/GrayScale"
                 FOW_Sample_float(pos, height, coneCheckOut);
 
                 OutOfBoundsCheck(pos, color);
-                float luma = dot(color.rgb * _unKnownColor, float3(0.2126729, 0.7151522, 0.0721750));
+                float luma = dot(color.rgb * _unKnownColor.rgb, float3(0.2126729, 0.7151522, 0.0721750));
                 float3 saturatedColor = luma.xxx + _saturationStrength.xxx * (color.rgb - luma.xxx);
                 return float4(lerp(saturatedColor, color.rgb, coneCheckOut), color.a);
             }

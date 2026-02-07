@@ -17,7 +17,7 @@ namespace FOW.Demos
         public List<FogOfWarRevealer> team3Members = new List<FogOfWarRevealer>();
 
         int team;
-        private void Start()
+        private void Awake()
         {
             team = 2;
             changeTeams();
