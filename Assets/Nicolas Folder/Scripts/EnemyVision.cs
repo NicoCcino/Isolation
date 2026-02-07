@@ -17,34 +17,67 @@ public class EnemyVision : MonoBehaviour
     {
         if (CanSeePlayer())
         {
-            Debug.Log("Player spotted!");
+            Debug.Log("Player seen!");
+        }
+        if (CanPerceivePlayer())
+        {
+            Debug.Log("Player perceived!");
         }
     }
 
     void OnDrawGizmos()
     {
+        if (enemyData == null) return;
+
+        float halfAngle = enemyData.viewAngle / 2f;
+        int segments = 20; // plus = cône plus lisse
+        Vector3 origin = transform.position + Vector3.up * 1.6f;
+
+        // --- Cone principal ---
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, enemyData.viewDistance);
+        Vector3 prevPoint = origin;
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = -halfAngle + (enemyData.viewAngle / segments) * i;
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * transform.forward;
+            Vector3 point = origin + dir * enemyData.viewDistance;
 
-        Vector3 left = Quaternion.Euler(0, -enemyData.viewAngle / 2, 0) * transform.forward;
-        Vector3 right = Quaternion.Euler(0, enemyData.viewAngle / 2, 0) * transform.forward;
+            Gizmos.DrawLine(origin, point);
 
-        Gizmos.color = Color.blue;
-        Gizmos.DrawRay(transform.position, left * enemyData.viewDistance);
-        Gizmos.DrawRay(transform.position, right * enemyData.viewDistance);
+            if (i > 0)
+                Gizmos.DrawLine(prevPoint, point);
+
+            prevPoint = point;
+        }
+
+        // --- Cone secondaire (perceiveRadius) ---
+        Gizmos.color = Color.green; // couleur différente
+        prevPoint = origin;
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = -halfAngle + (enemyData.viewAngle / segments) * i;
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * transform.forward;
+            Vector3 point = origin + dir * enemyData.perceptionDistance;
+
+            Gizmos.DrawLine(origin, point);
+
+            if (i > 0)
+                Gizmos.DrawLine(prevPoint, point);
+
+            prevPoint = point;
+        }
     }
-
-    public bool CanSeePlayer()
+    public bool IsPlayerInDetectionCone(float detectionDistance, float detectionAngle)
     {
         Vector3 dirToPlayer = (player.position - transform.position).normalized;
 
         // Distance check
-        if (Vector3.Distance(transform.position, player.position) > enemyData.viewDistance)
+        if (Vector3.Distance(transform.position, player.position) > detectionDistance)
             return false;
 
         // Angle check
         float angle = Vector3.Angle(transform.forward, dirToPlayer);
-        if (angle > enemyData.viewAngle / 2f)
+        if (angle > detectionAngle / 2f)
             return false;
 
         // Line of sight
@@ -55,5 +88,23 @@ public class EnemyVision : MonoBehaviour
             return false;
 
         return true;
+    }
+
+    public bool CanSeePlayer()
+    {
+        if(IsPlayerInDetectionCone(enemyData.viewDistance, enemyData.viewAngle))
+        {
+            // TODO: Add a check if player is in light or shadows
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public bool CanPerceivePlayer()
+    {
+        return IsPlayerInDetectionCone(enemyData.perceptionDistance, enemyData.perceptionAngle);
     }
 }
