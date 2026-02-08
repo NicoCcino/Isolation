@@ -58,7 +58,7 @@ public class WarnedState : AEnemyState
             if (enemyController.agent.hasPath == false)
             {
                 enemyController.agent.isStopped = false;
-                enemyController.agent.speed = 1;
+                enemyController.agent.speed = enemyController.enemyData.walkSpeed;
                 Debug.Log("Setting destination towards player");
                 enemyController.agent.SetDestination(Player.Instance.KinematicCarController.transform.position);
             }

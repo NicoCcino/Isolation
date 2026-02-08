@@ -224,7 +224,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -563,6 +563,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy v2 (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: m_Speed
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
       value: 16.43211
@@ -621,6 +625,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: enemyData
+      value: 
+      objectReference: {fileID: 11400000, guid: dcecac6d73e2c1241a689b3388f0d008, type: 2}
+    - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: waypoints.Array.size
       value: 4
       objectReference: {fileID: 0}
@@ -644,9 +652,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy v2 (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 5109673723911912830, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: enemyData
+      value: 
+      objectReference: {fileID: 11400000, guid: dcecac6d73e2c1241a689b3388f0d008, type: 2}
     - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -698,7 +710,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: patrollingState.waitTime
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -739,7 +751,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -879,6 +891,10 @@ PrefabInstance:
     - target: {fileID: 4707088897640340098, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Name
       value: Enemy v2 (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: m_Speed
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1071,11 +1087,11 @@ PrefabInstance:
     - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: 'waypoints.Array.data[0]'
       value: 
-      objectReference: {fileID: 899205612}
+      objectReference: {fileID: 1955502539}
     - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: 'waypoints.Array.data[1]'
       value: 
-      objectReference: {fileID: 1955502539}
+      objectReference: {fileID: 899205612}
     - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: 'waypoints.Array.data[2]'
       value: 
@@ -1090,7 +1106,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1102,7 +1118,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 43.8
+      value: 50.36
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1241,7 +1257,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1301,6 +1317,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: enemyData
+      value: 
+      objectReference: {fileID: 11400000, guid: dcecac6d73e2c1241a689b3388f0d008, type: 2}
+    - target: {fileID: 3131276696961584773, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: waypoints.Array.size
       value: 4
       objectReference: {fileID: 0}
@@ -1324,9 +1344,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy v2
       objectReference: {fileID: 0}
+    - target: {fileID: 5109673723911912830, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: enemyData
+      value: 
+      objectReference: {fileID: 11400000, guid: dcecac6d73e2c1241a689b3388f0d008, type: 2}
     - target: {fileID: 5883576944570342003, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_Speed
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6238356611610160701, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1378,7 +1402,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: patrollingState.waitTime
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

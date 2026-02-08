@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   walkSpeed: 1
   runSpeed: 3
-  pushingPlayerSpeed: 9
+  pushingPlayerSpeed: 25
   detectionSpeed: 0
   viewDistance: 10
   viewAngle: 90

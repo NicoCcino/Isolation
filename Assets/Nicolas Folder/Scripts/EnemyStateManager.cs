@@ -62,7 +62,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
             stateDictionary = new Dictionary<EEnemyState, AEnemyState>
              {
                         { EEnemyState.Default, new DefaultState(enemyController,enemyVision,enemyData,enemyStateManager)},
-                        { EEnemyState.Patrolling, new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
+                        { EEnemyState.Patrolling, patrollingState= new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
                         { EEnemyState.Warned, warnedState = new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,enemyAudio, warnedState.warnedTimeToAttack,warnedState.exclamationMarkGO,warnedState.startWarnedTimer,warnedState.delayBeforeMovingTowardsPlayer) },
                         { EEnemyState.Hunting, new HuntingState(enemyController,enemyVision,enemyData,enemyStateManager) },
                         { EEnemyState.Attacking, new AttackingState(enemyController,enemyVision,enemyData,enemyStateManager) },

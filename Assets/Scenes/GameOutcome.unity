@@ -292,7 +292,7 @@ MonoBehaviour:
   dontDestroyOnLoad: 0
   m_ShowDebugLog: 1
   m_ShowDebugTimer: 0
-  GameDuration: 300
+  GameDuration: 330
 --- !u!1 &1616904253
 GameObject:
   m_ObjectHideFlags: 0
