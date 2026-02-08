@@ -8,15 +8,17 @@ public class TimedEventManager : Singleton<TimedEventManager>
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     [SerializeField] private TimedEvent[] TimedEventList;
-    [SerializeField] private AudioSource audioSource;
+    private AudioSource audioSource;
     private Dictionary<TimedEvent,bool> TimedEventPlayMap; 
     void Start()
     {
+        Debug.Log("TimedEventList size" + TimedEventList.Length);
         foreach (TimedEvent timedEvent in TimedEventList)
         {
+            Debug.Log("Added : " + timedEvent);
             TimedEventPlayMap.Add(timedEvent,false);
         }
-        audioSource = GetComponent<AudioSource>();
+        audioSource = this.gameObject.GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -27,7 +29,8 @@ public class TimedEventManager : Singleton<TimedEventManager>
             if (TimedEventPlayMap[timedEvent] == false
                 && GameOutcomeManager.Instance.GetTimerProgression() >= timedEvent.RunDurationPercentageStart 
                 && GameOutcomeManager.Instance.GetTimerProgression()<= timedEvent.RunDurationPercentageStop)
-            {
+            {   
+                    Debug.Log("Play : " + timedEvent.audioClip);
                     audioSource.clip = timedEvent.audioClip;
                     audioSource.Play();
                     TimedEventPlayMap[timedEvent]=true; 
@@ -36,7 +39,7 @@ public class TimedEventManager : Singleton<TimedEventManager>
             if(TimedEventPlayMap[timedEvent] == true 
                 && GameOutcomeManager.Instance.GetTimerProgression() >= timedEvent.RunDurationPercentageStop)
             {
-                //StopSound
+                audioSource.Stop();
                 TimedEventPlayMap[timedEvent] = false;
             }
         }

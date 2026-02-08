@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: 5hClock
   m_EditorClassIdentifier: Assembly-CSharp::TimedEvent
   RunDurationPercentageStart: 60
-  RunDurationPercentageStop: 63
-  audioClip: {fileID: 0}
+  RunDurationPercentageStop: 65
+  audioClip: {fileID: 8300000, guid: b16e26fb22fce9545864b79a0c06c65b, type: 3}
