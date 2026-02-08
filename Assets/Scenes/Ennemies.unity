@@ -689,8 +689,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: enemyData
+      value: 
+      objectReference: {fileID: 11400000, guid: dcecac6d73e2c1241a689b3388f0d008, type: 2}
+    - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: startState
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: patrollingState.waitTime
+      value: 0.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1361,8 +1369,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: enemyData
+      value: 
+      objectReference: {fileID: 11400000, guid: dcecac6d73e2c1241a689b3388f0d008, type: 2}
+    - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
       propertyPath: startState
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8083377578160220978, guid: ed504fce0f93f8d4d89ba814b8b9ed50, type: 3}
+      propertyPath: patrollingState.waitTime
+      value: 0.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
