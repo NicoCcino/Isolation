@@ -19,6 +19,8 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     private float Timer = 0;
     public float GameDuration = 10;
 
+    public static int highScore;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -33,7 +35,14 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     {
         GameOutcome = E_GameOutcome.Success;
         Debug.Log("Succes");
+        float timeLeft = GameDuration - Timer;
+        if (highScore < timeLeft)
+        {
+            highScore = Mathf.RoundToInt(timeLeft);
+        }
         if (m_ShowDebugLog) Debug.Log("VICTORY : " + SuccessReason + " / " + GameOutcome);
+        Debug.Log("Time left in this run: " + timeLeft);
+        Debug.Log("High score: " + highScore);
         GameStateManager.Instance.ChangeState(EGameState.Victory);
     }
 
