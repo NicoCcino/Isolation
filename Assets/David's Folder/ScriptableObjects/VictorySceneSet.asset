@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43741686dc38822479206e98c127cd24, type: 3}
   m_Name: VictorySceneSet
   m_EditorClassIdentifier: Assembly-CSharp::WiDiD.SceneManagement.SceneSet
-  m_Scenes: []
+  m_Scenes:
+  - sceneAsset: {fileID: 102900000, guid: 00e86f4732a481a4f928ce0502b2b95d, type: 3}
+    scenePath: Assets/Scenes/VictoryScreen.unity
   m_ActiveScene:
-    sceneAsset: {fileID: 0}
-    scenePath: 
+    sceneAsset: {fileID: 102900000, guid: d60d12b01f6c6ae4096419ba493234e7, type: 3}
+    scenePath: Assets/Scenes/MainScene.unity

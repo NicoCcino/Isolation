@@ -289,7 +289,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7367802486dd0b643948e792cce70c20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOutcomeManager
-  dontDestroyOnLoad: 1
+  dontDestroyOnLoad: 0
   m_ShowDebugLog: 1
   m_ShowDebugTimer: 0
   GameDuration: 1e+20

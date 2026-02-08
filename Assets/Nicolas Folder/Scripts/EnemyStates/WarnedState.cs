@@ -26,6 +26,7 @@ public class WarnedState : AEnemyState
     {
         // Stop movement
         enemyController.agent.speed = 0;
+        enemyController.agent.ResetPath();
         warnedTimer = startWarnedTimer;
         movingTowardsPlayerTimer = 0f;
         enemyController.agentActions.RotateToFace(Player.Instance.KinematicCarController.CameraFollowPoint.position);
@@ -56,8 +57,10 @@ public class WarnedState : AEnemyState
         {
             if (enemyController.agent.hasPath == false)
             {
+                enemyController.agent.isStopped = false;
                 enemyController.agent.speed = 1;
-                enemyController.agent.SetDestination(Player.Instance.transform.position);
+                Debug.Log("Setting destination towards player");
+                enemyController.agent.SetDestination(Player.Instance.KinematicCarController.transform.position);
             }
         }
 
@@ -80,7 +83,6 @@ public class WarnedState : AEnemyState
         {
             enemyStateManager.ChangeState(EEnemyState.Patrolling);
         }
-        Debug.Log(warnedTimer);
 
     }
 }

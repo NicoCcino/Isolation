@@ -10,9 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43741686dc38822479206e98c127cd24, type: 3}
-  m_Name: DefeatSceneSet
+  m_Name: GameOverSceneSet
   m_EditorClassIdentifier: Assembly-CSharp::WiDiD.SceneManagement.SceneSet
-  m_Scenes: []
+  m_Scenes:
+  - sceneAsset: {fileID: 102900000, guid: 4b5a30a6a7d80804fb507e701b678913, type: 3}
+    scenePath: Assets/Scenes/GameOverScreen.unity
   m_ActiveScene:
-    sceneAsset: {fileID: 0}
-    scenePath: 
+    sceneAsset: {fileID: 102900000, guid: d60d12b01f6c6ae4096419ba493234e7, type: 3}
+    scenePath: Assets/Scenes/MainScene.unity

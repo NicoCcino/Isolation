@@ -859,6 +859,7 @@ GameObject:
   - component: {fileID: 2091191739349648754}
   - component: {fileID: 6439575448079365531}
   - component: {fileID: 1031991878215805107}
+  - component: {fileID: 3400138245188407460}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -1066,6 +1067,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AgentActions
   agent: {fileID: 5883576944570342003}
   turnSpeed: 240
+--- !u!114 &3400138245188407460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4707088897640340098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bd2966c16df4fa4cba52ea99b2698d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FOW.HiderDisableRenderers
+  ObjectsToHide:
+  - {fileID: 6689473339131465356}
 --- !u!1 &4752648763903758438
 GameObject:
   m_ObjectHideFlags: 0
@@ -3258,6 +3273,10 @@ PrefabInstance:
       value: SM_Icon_Letter_Exclamation_01
       objectReference: {fileID: 0}
     - target: {fileID: 1104850273578950, guid: 2fb9237466bb67a4aba3a1257a0190fb, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1104850273578950, guid: 2fb9237466bb67a4aba3a1257a0190fb, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
@@ -3339,5 +3358,10 @@ Animator:
 --- !u!4 &6669854374975603118 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4740029122835090, guid: 2fb9237466bb67a4aba3a1257a0190fb, type: 3}
+  m_PrefabInstance: {fileID: 6665541025355199292}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &6689473339131465356 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 23937126155845040, guid: 2fb9237466bb67a4aba3a1257a0190fb, type: 3}
   m_PrefabInstance: {fileID: 6665541025355199292}
   m_PrefabAsset: {fileID: 0}

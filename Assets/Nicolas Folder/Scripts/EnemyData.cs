@@ -8,6 +8,7 @@ public class EnemyData : ScriptableObject
 
     public float walkSpeed = 5f;
     public float runSpeed = 10f;
+    public float pushingPlayerSpeed = 10f;
     public float detectionSpeed;
 
     [Header("Vision")]

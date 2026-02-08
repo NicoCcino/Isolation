@@ -1,5 +1,7 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using WiDiD.UI;
 
 
 namespace WiDiD.SceneManagement
@@ -17,16 +19,18 @@ namespace WiDiD.SceneManagement
 		[SerializeField]
 		private bool m_ShowDebugLog = true;
 		[SerializeField]
-		GameObject m_LoadingScreenCanvas;
+		CanvasGroupCustom m_LoadingScreenCanvas;
 
 		// There are errors while trying to activate a scene when multiple scenes are loading, we wait for the last scene to load before setting the active scene
 		int m_ScenesCurrentlyLoading = 0;
 		int m_ScenesCurrentlyUnloading = 0;
 
-		public void LoadSceneSet(SceneSet set, bool safeLoad = true, System.Action OnSetLoaded = null)
+		public async void LoadSceneSet(SceneSet set, bool safeLoad = true, System.Action OnSetLoaded = null)
 		{
 			if (m_ShowDebugLog) Debug.Log($"Loading {set.Scenes.Count} scenes...");
 
+			m_LoadingScreenCanvas.Fade(true);
+			await UniTask.WaitForSeconds(0.5f);
 			System.Action<AsyncOperation> callback = null;
 			if (OnSetLoaded != null)
 			{
@@ -40,11 +44,12 @@ namespace WiDiD.SceneManagement
 			}
 		}
 
-		public void UnloadSceneSet(SceneSet set, bool safeUnload = true, bool destroyAllObjects = false, System.Action OnSetUnloaded = null)
+		public async void UnloadSceneSet(SceneSet set, bool safeUnload = true, bool destroyAllObjects = false, System.Action OnSetUnloaded = null)
 		{
 			if (m_ShowDebugLog) Debug.Log($"Unloading {set.Scenes.Count} scenes...");
 
 			System.Action<AsyncOperation> callback = null;
+			callback += FadeOffCanvas;
 			if (OnSetUnloaded != null)
 			{
 				m_ScenesCurrentlyUnloading = set.Scenes.Count;
@@ -56,7 +61,10 @@ namespace WiDiD.SceneManagement
 				UnloadScene(scene, safeUnload, destroyAllObjects, callback);
 			}
 		}
-
+		private void FadeOffCanvas(AsyncOperation _)
+		{
+			m_LoadingScreenCanvas.Fade(false);
+		}
 		/// <summary>
 		/// Unload the given scene
 		/// </summary>
@@ -161,8 +169,6 @@ namespace WiDiD.SceneManagement
 						SetSceneActive(sceneActive);
 					LightProbes.TetrahedralizeAsync();
 					// Hide VR loading
-					if (m_LoadingScreenCanvas != null)
-						m_LoadingScreenCanvas.SetActive(false);
 					OnSetLoaded?.Invoke();
 				});
 			}

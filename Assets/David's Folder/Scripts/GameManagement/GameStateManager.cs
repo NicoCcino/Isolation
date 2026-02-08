@@ -11,6 +11,8 @@ public class GameStateManager : BaseFSM<EGameState, AGameState>
     [Header("States")]
     [SerializeField] private MainMenuState mainMenuState;
     [SerializeField] private PlayingState playingState;
+    [SerializeField] private GameOverState gameoverState;
+    [SerializeField] private VictoryState victoryState;
 
     [Header("Debug")]
     [SerializeField] private EGameState startState;
@@ -54,7 +56,10 @@ public class GameStateManager : BaseFSM<EGameState, AGameState>
                         { EGameState.Default, mainMenuState },
                         { EGameState.MainMenu, mainMenuState },
                         { EGameState.Playing, playingState },
-             };
+                        {EGameState.GameOver,gameoverState},
+                        {EGameState.Victory, victoryState}
+             }
+        ;
         }
     }
     public void SetCoreSceneSet(SceneSet sceneSet)

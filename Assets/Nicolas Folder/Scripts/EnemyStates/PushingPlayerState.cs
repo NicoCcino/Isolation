@@ -1,5 +1,6 @@
 using KinematicCharacterController;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 [System.Serializable]
 public class PushingPlayerState : AEnemyState
 {
@@ -10,7 +11,7 @@ public class PushingPlayerState : AEnemyState
 
     public override void Enter()
     {
-        enemyController.agent.speed = enemyData.runSpeed;
+        enemyController.agent.speed = enemyData.pushingPlayerSpeed;
         PushPlayerToStart();
     }
 
@@ -23,7 +24,7 @@ public class PushingPlayerState : AEnemyState
         if (enemyController.HasReachedDestination(enemyController.agent))
         {
             Debug.Log("Agent successfully brought player back to start position");
-            // TO DO : Exit state or reload scene.
+            GameStateManager.Instance.ChangeState(EGameState.GameOver);
         }
     }
 

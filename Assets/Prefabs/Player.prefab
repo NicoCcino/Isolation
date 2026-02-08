@@ -230,7 +230,7 @@ MonoBehaviour:
   hitAudioClips:
   - {fileID: 8300000, guid: c2cbd56985ab14944a72e0fb04f3f33b, type: 3}
   volume: 1
-  audioParticle: {fileID: 0}
+  audioParticle: {fileID: 5856050237890673856}
 --- !u!1 &4950814324155012485
 GameObject:
   m_ObjectHideFlags: 0
@@ -278,9 +278,17 @@ MonoBehaviour:
   cooldownTime: 3
   audioLoopBlender: {fileID: 8734678029474853571}
   hitAudioClips:
-  - {fileID: 8300000, guid: f5b69b2cddfbffa47ab3a191270c1093, type: 3}
   - {fileID: 8300000, guid: b7bac24a57b3e4a4e990ece3039bfa6e, type: 3}
-  volume: 0.9
+  - {fileID: 8300000, guid: 6fa54ac56c36d4f4b9d2e80586e89c74, type: 3}
+  - {fileID: 8300000, guid: 756b1ab11cc3d314f94494a04276f6ce, type: 3}
+  - {fileID: 8300000, guid: b91d20dfe7353e048aa36577af35b092, type: 3}
+  - {fileID: 8300000, guid: c5f58c66038f1764781559c60cc79668, type: 3}
+  - {fileID: 8300000, guid: e30b5673cc5dee2429c9aeab5cae6203, type: 3}
+  - {fileID: 8300000, guid: 8bd8f6c83c592ef4ead74d5700d2ef4b, type: 3}
+  - {fileID: 8300000, guid: ddbef55f4f04c0240b08a6e85461ec95, type: 3}
+  - {fileID: 8300000, guid: 6d259cf1e7d5b6e4b8ed0fb8a4e4b390, type: 3}
+  - {fileID: 8300000, guid: f5e4ede6a4a6f254fb66356ad0f66955, type: 3}
+  volume: 0.7
   audioParticle: {fileID: 5856050237890673856}
 --- !u!1 &5138956915638137757
 GameObject:
@@ -341,7 +349,7 @@ MonoBehaviour:
     source: {fileID: 0}
   - name: Exhausted
     clip: {fileID: 8300000, guid: e28540e5f10fa0849a6e8ebe976d7aec, type: 3}
-    individualVolume: 0.25
+    individualVolume: 0.15
     source: {fileID: 0}
 --- !u!1 &6634677319464770786
 GameObject:

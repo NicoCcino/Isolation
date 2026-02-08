@@ -4,5 +4,7 @@ public enum EGameState
     MainMenu,
     Playing,
     Paused,
+    GameOver,
+    Victory
 
 }
