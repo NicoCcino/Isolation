@@ -13,6 +13,7 @@ public class EnemyData : ScriptableObject
     [Header("Vision")]
     public float viewDistance = 10f;
     public float viewAngle = 90f;
+    public float hearingDistance = 5f;
     [Header("Perception")]
     [Tooltip("Perception based on short distance - not considering lighting")]
 

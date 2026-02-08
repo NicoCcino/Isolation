@@ -10,6 +10,7 @@ public class EnemyController : MonoBehaviour
     public Transform playerAttachPoint;
     private EnemyVision vision;
 
+    public AgentActions agentActions;
     void OnValidate()
     {
         if (vision == null)
@@ -27,7 +28,7 @@ public class EnemyController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public bool HasReachedDestination(NavMeshAgent agent)
@@ -43,15 +44,24 @@ public class EnemyController : MonoBehaviour
 
         return false;
     }
-
+    public void FacePosition(Vector3 targetPosition)
+    {
+        Vector3 direction = (targetPosition - transform.position).normalized;
+        if (direction != Vector3.zero)
+        {
+            agent.velocity = direction * agent.speed;
+            transform.rotation = Quaternion.LookRotation(direction);
+        }
+    }
     void HuntPlayer()
     {
-        
+
     }
 
     void DetectPlayer()
     {
-        if (vision.CanSeePlayer()){
+        if (vision.CanSeePlayer())
+        {
             // Change state to warned
             // Start timer for warning duration
 

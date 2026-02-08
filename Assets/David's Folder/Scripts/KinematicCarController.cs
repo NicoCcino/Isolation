@@ -1,6 +1,7 @@
 using UnityEngine;
 using KinematicCharacterController;
 using UnityEngine.InputSystem;
+using System;
 public struct CarInputs
 {
     public float MoveAxisForward; // +1 for Forward (Z/W), -1 for Backward (S)
@@ -48,9 +49,11 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
     [SerializeField] private AudioEventIntermediary hitAudioEventIntermediary;
     [SerializeField] private AudioLoopBlender audioLoopBlender;
 
+
     private float timeAccelerating = 0f;
     private Vector3 _moveInputVector;
     private CarInputs _inputs;
+    public Action OnHit;
 
 
     private void Awake()
@@ -198,6 +201,7 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
         Debug.Log($"Player  collision with {hitCollider.gameObject.name}");
         gruntAudioEventIntermediary.PlayAudioEvent();
         hitAudioEventIntermediary.PlayAudioEvent();
+        OnHit?.Invoke();
     }
     public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
     public void OnDiscreteCollisionDetected(Collider hitCollider)
