@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Midnight
   m_EditorClassIdentifier: Assembly-CSharp::TimedEvent
   RunDurationPercentageStart: 0
-  RunDurationPercentageStop: 40
-  audioClip: {fileID: 0}
+  RunDurationPercentageStop: 10
+  audioClip: {fileID: 8300000, guid: e4c5ce58093575f46bf16880012fd4c1, type: 3}

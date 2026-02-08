@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3231009178866245ab39559ef57b04c, type: 3}
   m_Name: Dawn
   m_EditorClassIdentifier: Assembly-CSharp::TimedEvent
-  RunDurationPercentageStart: 95
+  RunDurationPercentageStart: 98
   RunDurationPercentageStop: 100
-  audioClip: {fileID: 0}
+  audioClip: {fileID: 8300000, guid: 80469b0ac68300d4e8d13a8069c18140, type: 3}

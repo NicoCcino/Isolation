@@ -430,9 +430,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOutcomeManager
   dontDestroyOnLoad: 1
-  m_ShowDebugLog: 1
+  m_ShowDebugLog: 0
   m_ShowDebugTimer: 0
-  GameDuration: 1e+20
+  GameDuration: 500
 --- !u!1001 &968857144
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -681,6 +681,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 84b28adbfbdfba8429768db56e15a4f4, type: 2}
   - {fileID: 11400000, guid: 9d5a0da9f94f22543b93bc36b7446923, type: 2}
   - {fileID: 11400000, guid: 348550eb8f6560045ba2ae193abd513b, type: 2}
+  - {fileID: 11400000, guid: 744950aaac2ac0c4c9ab29cdd29127f8, type: 2}
   - {fileID: 11400000, guid: a3e9887a13bae0346b3a1807bdd4ca18, type: 2}
   - {fileID: 11400000, guid: 22307628fa3ddff459ddd09afc0deec2, type: 2}
   - {fileID: 11400000, guid: f97f7d009c37b5b4297d541bd4414c7b, type: 2}

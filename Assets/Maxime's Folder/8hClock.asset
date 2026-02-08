@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3231009178866245ab39559ef57b04c, type: 3}
   m_Name: 8hClock
   m_EditorClassIdentifier: Assembly-CSharp::TimedEvent
-  RunDurationPercentageStart: 84
-  RunDurationPercentageStop: 87
-  audioClip: {fileID: 0}
+  RunDurationPercentageStart: 95
+  RunDurationPercentageStop: 100
+  audioClip: {fileID: 8300000, guid: 414aacbc993095b4685f05f4fcf98e07, type: 3}
