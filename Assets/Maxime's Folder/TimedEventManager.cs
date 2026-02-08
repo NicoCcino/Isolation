@@ -48,11 +48,11 @@ public class TimedEventManager : Singleton<TimedEventManager>
     void CheckTimedEvents()
     {
         float timer = GameOutcomeManager.Instance.GetTimerProgression();
-        Debug.Log("Timer: " + timer);
+        //Debug.Log("Timer: " + timer);
 
         for (int i = 0; i < timedEventEntries.Length; i++)
         {
-            Debug.Log($"Checking on {timedEventEntries[i].timedEvent.name} if {!timedEventEntries[i].hasPlayed} && {timer} >= {timedEventEntries[i].timedEvent.RunDurationPercentageStart}");
+            //Debug.Log($"Checking on {timedEventEntries[i].timedEvent.name} if {!timedEventEntries[i].hasPlayed} && {timer} >= {timedEventEntries[i].timedEvent.RunDurationPercentageStart}");
             if (!timedEventEntries[i].hasPlayed &&
                 timer >= timedEventEntries[i].timedEvent.RunDurationPercentageStart)
             {
