@@ -12,6 +12,8 @@ public class PushingPlayerState : AEnemyState
     public override void Enter()
     {
         enemyController.agent.speed = enemyData.pushingPlayerSpeed;
+        enemyController.agent.acceleration = 100;
+        enemyController.agent.angularSpeed = 10000;
         PushPlayerToStart();
         Player.Instance.PlayRandomCaughtClip();
 

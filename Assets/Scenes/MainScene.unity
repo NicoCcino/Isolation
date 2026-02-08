@@ -671,7 +671,7 @@ MonoBehaviour:
     source: {fileID: 2140982568}
   victoryState:
     sceneSet: {fileID: 11400000, guid: e1da73d6a8ef4fb41bd200cd7d1eb926, type: 2}
-    victoryClip: {fileID: 8300000, guid: 56c87d200f3dde047af7d04927695d23, type: 3}
+    victoryClip: {fileID: 8300000, guid: d3668dfcd92437541943a0f83aeebaa1, type: 3}
     audioSource: {fileID: 2140982568}
   startState: 1
 --- !u!114 &2140982567

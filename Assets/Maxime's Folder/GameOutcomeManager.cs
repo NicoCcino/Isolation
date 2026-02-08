@@ -23,7 +23,7 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if(m_ShowDebugLog) Debug.Log("Init GameOutcomeManager");
+        if (m_ShowDebugLog) Debug.Log("Init GameOutcomeManager");
         //Reset state variable
         Timer = 0;
         GameOutcome = E_GameOutcome.None;
@@ -33,13 +33,15 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     {
         GameOutcome = E_GameOutcome.Success;
         Debug.Log("Succes");
-        if(m_ShowDebugLog) Debug.Log("VICTORY : " + SuccessReason + " / " + GameOutcome);
+        if (m_ShowDebugLog) Debug.Log("VICTORY : " + SuccessReason + " / " + GameOutcome);
+        GameStateManager.Instance.ChangeState(EGameState.Victory);
     }
 
-    public void Defeat(string DefeatReason) 
+    public void Defeat(string DefeatReason)
     {
         GameOutcome = E_GameOutcome.Defeat;
-        if(m_ShowDebugLog) Debug.Log("DEFEAT : " + DefeatReason + " / " + GameOutcome);
+        if (m_ShowDebugLog) Debug.Log("DEFEAT : " + DefeatReason + " / " + GameOutcome);
+        GameStateManager.Instance.ChangeState(EGameState.GameOver);
     }
 
     // Update is called once per frame
@@ -54,8 +56,8 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
 
     void TimerUpdate()
     {
-        Timer+= Time.deltaTime;
-            if(m_ShowDebugTimer) Debug.Log("Timer : "+ Timer + "s" );       
+        Timer += Time.deltaTime;
+        if (m_ShowDebugTimer) Debug.Log("Timer : " + Timer + "s");
     }
 
     public float GetTimer()
@@ -66,7 +68,7 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     public int GetTimerProgression()
     {
         int TimerProgression = 0;
-        TimerProgression = (int) Math.Round(100*Timer/GameDuration);
+        TimerProgression = (int)Math.Round(100 * Timer / GameDuration);
         return TimerProgression;
     }
 }

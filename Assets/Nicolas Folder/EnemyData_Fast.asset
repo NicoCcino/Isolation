@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ca4e88998652e0248a4b32d6573e16e9, type: 3}
-  m_Name: EnemyData_Standard
+  m_Name: EnemyData_Fast
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  walkSpeed: 1
+  walkSpeed: 1.5
   runSpeed: 3
   pushingPlayerSpeed: 9
   detectionSpeed: 0

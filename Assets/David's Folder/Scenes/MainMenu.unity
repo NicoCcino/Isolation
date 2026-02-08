@@ -313,7 +313,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ESCAPE THE \nNURSING ROOM"
+  m_text: "ESCAPE THE \nNURSING HOME"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5c0c0740fd5a98245988d6a37b2936f5, type: 2}
   m_sharedMaterial: {fileID: 7456657179523324333, guid: 5c0c0740fd5a98245988d6a37b2936f5, type: 2}

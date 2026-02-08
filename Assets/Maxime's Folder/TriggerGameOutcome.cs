@@ -20,14 +20,9 @@ public class TriggerGameOutcome : MonoBehaviour
             if (other.GetComponentInParent<Player>() != null)
             {
                 GameOutcomeManager.Instance.Victory("Player Collided with test success box");
-                GameStateManager.Instance.ChangeState(EGameState.Victory);
+
             }
 
         }
-        if (OutcomeToSet == E_DefinitiveOutcome.Defeat)
-        {
-            GameOutcomeManager.Instance.Defeat("Collided with test defeat box ");
-        }
-
     }
 }
