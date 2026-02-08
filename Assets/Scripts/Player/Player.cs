@@ -2,7 +2,6 @@ using FOW;
 using UnityEngine;
 using UnityEngine.InputSystem; // Required for New Input System
 using NaughtyAttributes;
-using System;
 public class Player : Singleton<Player>
 {
     public KinematicCarController KinematicCarController;
@@ -22,7 +21,8 @@ public class Player : Singleton<Player>
     [ReadOnly] public bool IsInLight;
     [ReadOnly] public bool IsMakingNoise;
     private float makingNoiseTime = 0.2f;
-
+    public AudioClip[] caughtClips;
+    public AudioSource audioSource;
     private void EnableInputs()
     {
         // Ideally, enable inputs when the script becomes active
@@ -115,5 +115,10 @@ public class Player : Singleton<Player>
         // Apply inputs to the camera
         CameraController.UpdateWithInput(Time.deltaTime, DisableCameraControl ? Vector3.zero : lookInputVector);
 
+    }
+    public void PlayRandomCaughtClip()
+    {
+        AudioClip randomClip = caughtClips[Random.Range(0, caughtClips.Length)];
+        audioSource.PlayOneShot(randomClip, 0.6f);
     }
 }

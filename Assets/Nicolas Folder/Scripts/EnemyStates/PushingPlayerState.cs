@@ -13,6 +13,8 @@ public class PushingPlayerState : AEnemyState
     {
         enemyController.agent.speed = enemyData.pushingPlayerSpeed;
         PushPlayerToStart();
+        Player.Instance.PlayRandomCaughtClip();
+
     }
 
     public override void Exit()
