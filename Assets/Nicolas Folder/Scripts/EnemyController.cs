@@ -7,6 +7,7 @@ public class EnemyController : MonoBehaviour
     public EnemyData enemyData;
     public NavMeshAgent agent;
     public Transform[] waypoints;
+    public Transform playerAttachPoint;
     private EnemyVision vision;
 
     void OnValidate()

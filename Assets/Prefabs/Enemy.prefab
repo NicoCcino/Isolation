@@ -554,6 +554,37 @@ Transform:
   - {fileID: 2376091398769886879}
   m_Father: {fileID: 7156003089849410329}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2363101234080590460
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1588205454037762335}
+  m_Layer: 0
+  m_Name: PlayerAttachPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1588205454037762335
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2363101234080590460}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.5450001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6238356611610160701}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2561753492157900975
 GameObject:
   m_ObjectHideFlags: 0
@@ -856,6 +887,7 @@ Transform:
   - {fileID: 161797697516833385}
   - {fileID: 6485727268669806415}
   - {fileID: 2012380518968395641}
+  - {fileID: 1588205454037762335}
   - {fileID: 8830014021538566560}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -898,6 +930,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 0}
   - {fileID: 0}
+  playerAttachPoint: {fileID: 1588205454037762335}
 --- !u!114 &5109673723911912830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -914,7 +947,7 @@ MonoBehaviour:
   enemyData: {fileID: 11400000, guid: bf9f97dfa9ff5e140a907f15f0cbd2d3, type: 2}
   obstacleMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 128
 --- !u!114 &8083377578160220978
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -930,12 +963,15 @@ MonoBehaviour:
   enemyController: {fileID: 3131276696961584773}
   enemyVision: {fileID: 5109673723911912830}
   enemyData: {fileID: 11400000, guid: bf9f97dfa9ff5e140a907f15f0cbd2d3, type: 2}
+  enemyAudio: {fileID: 6227359040093667842}
   enemyStateManager: {fileID: 8083377578160220978}
   patrollingState:
     waitTime: 2
   warnedState:
     warnedTime: 2
     exclamationMarkGO: {fileID: 6666223431232576762}
+  attackingState:
+    grabDistance: 0
   startState: 1
 --- !u!195 &5883576944570342003
 NavMeshAgent:
@@ -3137,7 +3173,10 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 03b64312c7327cf4d8c6470c11ada2cc, type: 3}
   - {fileID: 8300000, guid: 429adddfb3d6d2a4e8c13e0a2f40b76c, type: 3}
   - {fileID: 8300000, guid: 9a7d515cf5e54a84dae02f318889e7b1, type: 3}
-  footStepVolume: 0.5
+  footStepVolume: 0.4
+  warnedReactions:
+  - {fileID: 8300000, guid: ab682aef86c56ee4594784b6856a9d5f, type: 3}
+  warnedReactionVolume: 0.7
 --- !u!1 &570603160938525646 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4909997476075799356, guid: 8f2d72b8a186ccf458218ae1f88d275e, type: 3}

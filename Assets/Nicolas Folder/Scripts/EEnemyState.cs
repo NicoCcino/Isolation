@@ -5,4 +5,5 @@ public enum EEnemyState
     Warned,
     Hunting,
     Attacking,
+    PushingPlayer,
 }
