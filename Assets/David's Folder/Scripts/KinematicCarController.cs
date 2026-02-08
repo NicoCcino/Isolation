@@ -47,6 +47,7 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
     [SerializeField] private AudioEventIntermediary gruntAudioEventIntermediary;
     [SerializeField] private AudioEventIntermediary hitAudioEventIntermediary;
     [SerializeField] private AudioLoopBlender audioLoopBlender;
+
     private float timeAccelerating = 0f;
     private Vector3 _moveInputVector;
     private CarInputs _inputs;

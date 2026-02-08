@@ -1,6 +1,7 @@
+using FOW;
 using UnityEngine;
 using UnityEngine.InputSystem; // Required for New Input System
-
+using NaughtyAttributes;
 public class Player : Singleton<Player>
 {
     public KinematicCarController KinematicCarController;
@@ -12,6 +13,12 @@ public class Player : Singleton<Player>
     public InputActionReference MoveInput;       // Value (Vector2) - WASD/Left Stick
     public InputActionReference LookInput;       // Value (Vector2) - Mouse Delta/Right Stick
 
+
+    [Header("Fog of War")]
+    public FogOfWarRevealer PlayerRevealer;
+    public FogOfWarHider PlayerHider;
+    public LightShaderLerp lightShaderLerp;
+    [ReadOnly] public bool IsInLight;
     private void EnableInputs()
     {
         // Ideally, enable inputs when the script becomes active
@@ -61,11 +68,20 @@ public class Player : Singleton<Player>
         //     CameraController.PlanarDirection = Character.Motor.AttachedRigidbody.GetComponent<PhysicsMover>().RotationDeltaFromInterpolation * CameraController.PlanarDirection;
         //     CameraController.PlanarDirection = Vector3.ProjectOnPlane(CameraController.PlanarDirection, Character.Motor.CharacterUp).normalized;
         // }
+        SetIsInLight(PlayerHider.NumObservers > 1);
         HandleCameraInput();
         UiDebugInputs.UpdateWithMoveInput(MoveInput.action.ReadValue<Vector2>());
     }
-
+    private void SetIsInLight(bool value)
+    {
+        if (IsInLight != value)
+        {
+            IsInLight = value;
+            lightShaderLerp.SetState(IsInLight);
+        }
+    }
     private void HandleCameraInput()
+
     {
         if (CameraController == null) return;
         // Create the look input vector for the camera
