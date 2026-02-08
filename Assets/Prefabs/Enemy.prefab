@@ -3092,7 +3092,7 @@ AudioSource:
   m_GameObject: {fileID: 399990827276407987}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 073dac785c516f848b5599a6f16de39e, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
@@ -3206,10 +3206,10 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 03b64312c7327cf4d8c6470c11ada2cc, type: 3}
   - {fileID: 8300000, guid: 429adddfb3d6d2a4e8c13e0a2f40b76c, type: 3}
   - {fileID: 8300000, guid: 9a7d515cf5e54a84dae02f318889e7b1, type: 3}
-  footStepVolume: 0.6
+  footStepVolume: 0.8
   warnedReactions:
   - {fileID: 8300000, guid: 4ed3886169da59e49897e0ffbaaa6fac, type: 3}
-  warnedReactionVolume: 0.7
+  warnedReactionVolume: 1
 --- !u!1 &570603160938525646 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4909997476075799356, guid: 8f2d72b8a186ccf458218ae1f88d275e, type: 3}
