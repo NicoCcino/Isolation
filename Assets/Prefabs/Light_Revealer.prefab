@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c8c92e8943a9914ba89720ba5fcf806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarRevealer3D
-  ViewRadius: 3
+  ViewRadius: 4
   SoftenDistance: 3
   ViewAngle: 360
   UnobscuredRadius: 1
@@ -59,7 +59,7 @@ MonoBehaviour:
   CalculateHidersAtHiderHeight: 0
   ObstacleMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   RaycastResolution: 0.5
   ResolveEdge: 1
   MaxEdgeResolveIterations: 10

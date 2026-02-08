@@ -970,9 +970,9 @@ MonoBehaviour:
   patrollingState:
     waitTime: 2
   warnedState:
-    delayBeforeMovingTowardsPlayer: 2
-    startWarnedTimer: 2
-    warnedTimeToAttack: 4
+    delayBeforeMovingTowardsPlayer: 1
+    startWarnedTimer: 8
+    warnedTimeToAttack: 10
     exclamationMarkGO: {fileID: 6666223431232576762}
   attackingState:
     grabDistance: 1
@@ -990,7 +990,7 @@ NavMeshAgent:
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 240
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -3191,9 +3191,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 03b64312c7327cf4d8c6470c11ada2cc, type: 3}
   - {fileID: 8300000, guid: 429adddfb3d6d2a4e8c13e0a2f40b76c, type: 3}
   - {fileID: 8300000, guid: 9a7d515cf5e54a84dae02f318889e7b1, type: 3}
-  footStepVolume: 0.4
+  footStepVolume: 0.6
   warnedReactions:
-  - {fileID: 8300000, guid: ab682aef86c56ee4594784b6856a9d5f, type: 3}
+  - {fileID: 8300000, guid: 4ed3886169da59e49897e0ffbaaa6fac, type: 3}
   warnedReactionVolume: 0.7
 --- !u!1 &570603160938525646 stripped
 GameObject:
