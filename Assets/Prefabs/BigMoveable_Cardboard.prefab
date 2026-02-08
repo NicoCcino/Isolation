@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5911188120954592992, guid: f340ba8bd4286904f9660cb9d8f692a3, type: 3}
       propertyPath: m_Name
-      value: Moveable_Cardboard
+      value: BigMoveable_Cardboard
       objectReference: {fileID: 0}
     - target: {fileID: 5911188120954592992, guid: f340ba8bd4286904f9660cb9d8f692a3, type: 3}
       propertyPath: m_Layer
@@ -83,6 +83,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5911188120954592992, guid: f340ba8bd4286904f9660cb9d8f692a3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3539063728965091603}
+    - targetCorrespondingSourceObject: {fileID: 5911188120954592992, guid: f340ba8bd4286904f9660cb9d8f692a3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4306316469479121625}
   m_SourcePrefab: {fileID: 100100000, guid: f340ba8bd4286904f9660cb9d8f692a3, type: 3}
 --- !u!1 &8620359644391886576 stripped
 GameObject:
@@ -137,3 +140,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 2
+--- !u!208 &4306316469479121625
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8620359644391886576}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.23700002, y: 0.17, z: 0.155}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.17, z: 0}
+  m_TimeToStationary: 0.5
