@@ -6,7 +6,7 @@ public class AttackingState : AEnemyState
     {
     }
 
-    public float grabDistance = 2f;
+    public float grabDistance = 1f;
     public override void Enter()
     {
         Debug.Log("Agent enters attack state");
@@ -36,16 +36,16 @@ public class AttackingState : AEnemyState
 
     bool HasAgentReachedPlayer()
     {
-        if (enemyController.HasReachedDestination(enemyController.agent))
-        {
-            float dist = Vector3.Distance(enemyController.agent.destination, enemyVision.player.transform.position);
+        //if (enemyController.HasReachedDestination(enemyController.agent))
+        //{
+            float dist = Vector3.Distance(enemyController.gameObject.transform.position, enemyVision.player.transform.position);
             if (dist < grabDistance)
             {
                 Debug.Log("Assez proche pour grab le joueur");
                 return true;
             }
 
-        }
+        //}
         return false;
     }
 }
