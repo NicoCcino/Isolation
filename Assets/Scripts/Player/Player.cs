@@ -113,7 +113,7 @@ public class Player : Singleton<Player>
         // on your CharacterCamera component.
         Vector3 lookInputVector = new Vector3(lookInput.x, lookInput.y, 0f);
         // Apply inputs to the camera
-        CameraController.UpdateWithInput(Time.deltaTime, DisableCameraControl ? Vector3.zero : lookInputVector);
+        CameraController.UpdateCamera(Time.deltaTime);
 
     }
     public void PlayRandomCaughtClip()
