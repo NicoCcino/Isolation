@@ -6,6 +6,7 @@ public class AudioEventIntermediary : MonoBehaviour
     [SerializeField] private AudioLoopBlender audioLoopBlender;
     [SerializeField] private AudioClip[] hitAudioClips;
     [SerializeField] private float volume = 1.0f;
+    [SerializeField] private ParticleSystem audioParticle;
     private float cooldownTimer;
     public void PlayAudioEvent()
     {
@@ -14,6 +15,8 @@ public class AudioEventIntermediary : MonoBehaviour
         AudioClip randomClip = hitAudioClips[Random.Range(0, hitAudioClips.Length)];
         audioLoopBlender.PlayOverrideEvent(randomClip, volume);
         cooldownTimer = cooldownTime;
+        if (audioParticle == null) return;
+        audioParticle.Play();
     }
     private void Update()
     {
