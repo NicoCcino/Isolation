@@ -199,6 +199,7 @@ public class KinematicCarController : MonoBehaviour, ICharacterController
     public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport)
     {
         Debug.Log($"Player  collision with {hitCollider.gameObject.name}");
+        if (hitCollider.tag == "DontTriggerSound") return;
         gruntAudioEventIntermediary.PlayAudioEvent();
         hitAudioEventIntermediary.PlayAudioEvent();
         OnHit?.Invoke();
