@@ -858,6 +858,7 @@ GameObject:
   - component: {fileID: 2746906085961344808}
   - component: {fileID: 2091191739349648754}
   - component: {fileID: 6439575448079365531}
+  - component: {fileID: 1031991878215805107}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -931,6 +932,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   playerAttachPoint: {fileID: 1588205454037762335}
+  agentActions: {fileID: 1031991878215805107}
 --- !u!114 &5109673723911912830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -968,10 +970,12 @@ MonoBehaviour:
   patrollingState:
     waitTime: 2
   warnedState:
-    warnedTime: 2
+    delayBeforeMovingTowardsPlayer: 2
+    startWarnedTimer: 2
+    warnedTimeToAttack: 4
     exclamationMarkGO: {fileID: 6666223431232576762}
   attackingState:
-    grabDistance: 0
+    grabDistance: 1
   startState: 1
 --- !u!195 &5883576944570342003
 NavMeshAgent:
@@ -1048,6 +1052,20 @@ MonoBehaviour:
   - {fileID: 3783729696849203232}
   - {fileID: 570603160938525646}
   - {fileID: 946722112215967021}
+--- !u!114 &1031991878215805107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4707088897640340098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f2d2ac29ba9724783989c895446aca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AgentActions
+  agent: {fileID: 5883576944570342003}
+  turnSpeed: 240
 --- !u!1 &4752648763903758438
 GameObject:
   m_ObjectHideFlags: 0

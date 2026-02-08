@@ -17,9 +17,9 @@ public class PatrollingState : AEnemyState
         enemyController.agent.speed = enemyData.walkSpeed;
         //if (IsPatrolAvailable(enemyController.waypoints))
         //{
-            Debug.Log ("Going to waypoint 0");
-            enemyController.agent.SetDestination(enemyController.waypoints[currentWaypointIndex].position);
-            waitTime = enemyController.waypoints[currentWaypointIndex].GetComponent<PatrolWaypoint>().waitTime; // Set wait time  
+        Debug.Log("Going to waypoint 0");
+        enemyController.agent.SetDestination(enemyController.waypoints[currentWaypointIndex].position);
+        waitTime = enemyController.waypoints[currentWaypointIndex].GetComponent<PatrolWaypoint>().waitTime; // Set wait time  
         //}
 
     }
@@ -77,13 +77,12 @@ public class PatrollingState : AEnemyState
 
     void CheckDetection()
     {
-        if (enemyVision.CanSeePlayer() || enemyVision.CanPerceivePlayer())
+        if (enemyVision.CanSeePlayer() || enemyVision.CanPerceivePlayer() || enemyVision.CanHearPlayer())
         {
             // Change state to warned
             enemyStateManager.ChangeState(EEnemyState.Warned);
             Debug.Log("Agent detected player during patrol, changing state to warned.");
         }
-
     }
 
     void GoToNextPoint()

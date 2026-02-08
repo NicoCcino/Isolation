@@ -9,10 +9,9 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
     [SerializeField] public EnemyVision enemyVision;
     [SerializeField] public EnemyData enemyData;
     [SerializeField] public EnemyAudio enemyAudio;
-
     [SerializeField] public EnemyStateManager enemyStateManager;
 
-
+    public float DetectedPlayerScale => Mathf.Clamp01(warnedState.WarnedTimer / warnedState.warnedTimeToAttack); // if 0 => chill , if 1 => attacking
 
     [Header("States")]
     [SerializeField] private DefaultState defaultState;
@@ -31,6 +30,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
         InitStates();
         ChangeState(startState);
     }
+
 
     public override void ChangeState(EEnemyState newState)
     {
@@ -63,7 +63,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
              {
                         { EEnemyState.Default, new DefaultState(enemyController,enemyVision,enemyData,enemyStateManager)},
                         { EEnemyState.Patrolling, new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
-                        { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,enemyAudio, warnedState.warnedTime,warnedState.exclamationMarkGO) },
+                        { EEnemyState.Warned, warnedState = new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,enemyAudio, warnedState.warnedTimeToAttack,warnedState.exclamationMarkGO) },
                         { EEnemyState.Hunting, new HuntingState(enemyController,enemyVision,enemyData,enemyStateManager) },
                         { EEnemyState.Attacking, new AttackingState(enemyController,enemyVision,enemyData,enemyStateManager) },
                         { EEnemyState.PushingPlayer, new PushingPlayerState(enemyController,enemyVision,enemyData,enemyStateManager) }

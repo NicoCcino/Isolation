@@ -17,5 +17,6 @@ MonoBehaviour:
   detectionSpeed: 0
   viewDistance: 10
   viewAngle: 90
+  hearingDistance: 8
   perceptionDistance: 1.5
   perceptionAngle: 360

@@ -1,4 +1,6 @@
+
 using UnityEngine;
+
 
 public class EnemyVision : MonoBehaviour
 {
@@ -10,19 +12,6 @@ public class EnemyVision : MonoBehaviour
     void Start()
     {
         player = Player.Instance.KinematicCarController.transform;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (CanSeePlayer())
-        {
-            //Debug.Log("Player seen!");
-        }
-        if (CanPerceivePlayer())
-        {
-            //Debug.Log("Player perceived!");
-        }
     }
 
     void OnDrawGizmos()
@@ -71,7 +60,7 @@ public class EnemyVision : MonoBehaviour
     {
         Vector3 origin = transform.position + Vector3.up * 1.6f;
         //Vector3 toPlayer = player.position - transform.position;
-        Vector3 toPlayer = player.position - (origin+transform.position)/2;
+        Vector3 toPlayer = player.position - (origin + transform.position) / 2;
         Vector3 dirToPlayer = toPlayer.normalized;
         float distanceToPlayer = toPlayer.magnitude;
 
@@ -111,7 +100,9 @@ public class EnemyVision : MonoBehaviour
     {
         if (IsPlayerInDetectionCone(enemyData.viewDistance, enemyData.viewAngle))
         {
-            // TODO: Add a check if player is in light or shadows
+            if (!Player.Instance.IsInLight)
+                return false;
+
             return true;
         }
         else
@@ -123,5 +114,9 @@ public class EnemyVision : MonoBehaviour
     public bool CanPerceivePlayer()
     {
         return IsPlayerInDetectionCone(enemyData.perceptionDistance, enemyData.perceptionAngle);
+    }
+    public bool CanHearPlayer()
+    {
+        return Player.Instance.IsMakingNoise && Vector3.Distance(Player.Instance.KinematicCarController.transform.position, transform.position) < enemyData.hearingDistance;
     }
 }

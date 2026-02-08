@@ -2,6 +2,7 @@ using FOW;
 using UnityEngine;
 using UnityEngine.InputSystem; // Required for New Input System
 using NaughtyAttributes;
+using System;
 public class Player : Singleton<Player>
 {
     public KinematicCarController KinematicCarController;
@@ -19,6 +20,9 @@ public class Player : Singleton<Player>
     public FogOfWarHider PlayerHider;
     public LightShaderLerp lightShaderLerp;
     [ReadOnly] public bool IsInLight;
+    [ReadOnly] public bool IsMakingNoise;
+    private float makingNoiseTime = 0.2f;
+
     private void EnableInputs()
     {
         // Ideally, enable inputs when the script becomes active
@@ -30,6 +34,7 @@ public class Player : Singleton<Player>
     {
         DisableInput(MoveInput);
         DisableInput(LookInput);
+        KinematicCarController.OnHit -= OnHitCallback;
     }
 
     // Helper to safely enable actions
@@ -57,9 +62,19 @@ public class Player : Singleton<Player>
         // Ignore the character's collider(s) for camera obstruction checks
         CameraController.IgnoredColliders.Clear();
         CameraController.IgnoredColliders.AddRange(KinematicCarController.GetComponentsInChildren<Collider>());
+        KinematicCarController.OnHit += OnHitCallback;
 
     }
 
+    private void OnHitCallback()
+    {
+        IsMakingNoise = true;
+        Invoke("ResetIsMakingNoise", makingNoiseTime);
+    }
+    private void ResetIsMakingNoise()
+    {
+        IsMakingNoise = false;
+    }
     private void LateUpdate()
     {
         // // Handle rotating the camera along with physics movers
@@ -71,6 +86,8 @@ public class Player : Singleton<Player>
         SetIsInLight(PlayerHider.NumObservers > 1);
         HandleCameraInput();
         UiDebugInputs.UpdateWithMoveInput(MoveInput.action.ReadValue<Vector2>());
+
+
     }
     private void SetIsInLight(bool value)
     {
