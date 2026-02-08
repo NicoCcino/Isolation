@@ -119,7 +119,128 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &1709358851
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1709358854}
+  - component: {fileID: 1709358853}
+  - component: {fileID: 1709358852}
+  m_Layer: 0
+  m_Name: FogOfWar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1709358852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709358851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb0864e28d07a19459288d2ad72d6071, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FogOfWarPointTester
+  dontDestroyOnLoad: 0
+  Revealers: []
+--- !u!114 &1709358853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709358851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1afdc8801548c4cab37872782c6e11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarWorld
+  UpdateMethod: 1
+  UsingSoftening: 0
+  FogType: 1
+  FogFade: 4
+  BlendType: 1
+  EdgeSoftenDistance: 0.1
+  UnobscuredSoftenDistance: 0.25
+  UseInnerSoften: 1
+  InnerSoftenAngle: 5
+  AllowBleeding: 0
+  SightExtraAmount: 0.01
+  MaxFogDistance: 10000
+  PixelateFog: 0
+  WorldSpacePixelate: 0
+  PixelDensity: 2
+  RoundRevealerPosition: 0
+  PixelGridOffset: {x: 0, y: 0}
+  UseDithering: 0
+  DitherSize: 20
+  InvertFowEffect: 0
+  FogFadePower: 1
+  FogAppearance: 2
+  UnknownColor: {r: 0.047169805, g: 0.047169805, b: 0.047169805, a: 1}
+  SaturationStrength: 0
+  BlurStrength: 1
+  BlurDistanceScreenPercentMin: 0.3
+  BlurDistanceScreenPercentMax: 1.2
+  BlurSamples: 6
+  FogTexture: {fileID: 0}
+  UseTriplanar: 1
+  FogTextureTiling: {x: 1, y: 1}
+  FogScrollSpeed: {x: 1, y: 1}
+  OutlineThickness: 0.1
+  FOWSamplingMode: 0
+  UseRegrow: 0
+  RevealerFadeIn: 0
+  FogRegrowSpeed: 0.5
+  InitialFogExplorationValue: 0
+  MaxFogRegrowAmount: 0.3
+  FowTextureMaterial: {fileID: 0}
+  FowResX: 512
+  FowResY: 512
+  UseConstantBlur: 1
+  ConstantTextureBlurQuality: 2
+  ConstantTextureBlurAmount: 0.75
+  UseWorldBounds: 0
+  WorldBoundsSoftenDistance: 1
+  WorldBoundsInfluence: 1
+  WorldBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0.5, y: 0.5, z: 0.5}
+  UseMiniMap: 0
+  MiniMapColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.95}
+  UIImage: {fileID: 0}
+  revealerMode: 0
+  MaxNumRevealersPerFrame: 25
+  MaxPossibleRevealers: 256
+  MaxPossibleSegmentsPerRevealer: 128
+  is2D: 0
+  gamePlane: 0
+  FogOfWarMaterial: {fileID: 0}
+--- !u!4 &1709358854
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709358851}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
-  m_Roots: []
+  m_Roots:
+  - {fileID: 1709358854}
