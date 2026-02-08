@@ -6,11 +6,14 @@ public class WarnedState : AEnemyState
     protected float warnedTimer = 0f;
     public float warnedTime = 2f;
     public GameObject exclamationMarkGO;
+    protected EnemyAudio enemyAudio;
 
-    public WarnedState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager, float warnedTime, GameObject exclamationMarkGO) : base(enemyController, enemyVision, enemyData, enemyStateManager)
+
+    public WarnedState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager, EnemyAudio enemyAudio, float warnedTime, GameObject exclamationMarkGO) : base(enemyController, enemyVision, enemyData, enemyStateManager)
     {
         this.warnedTime = warnedTime;
         this.exclamationMarkGO = exclamationMarkGO;
+        this.enemyAudio = enemyAudio;
     }
 
     public override void Enter()
@@ -18,9 +21,12 @@ public class WarnedState : AEnemyState
         // Stop movement
         enemyController.agent.speed = 0f;
         warnedTimer = 0f;
-        // TO DO : Add jump animation and exclamation mark
         // Display exclamation mark
         exclamationMarkGO.SetActive(true);
+        // TODO: Add jump action on NPC
+        // Play sound
+        enemyAudio.PlayWarnedSound();
+        
 
     }
 

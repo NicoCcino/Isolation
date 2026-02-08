@@ -8,7 +8,10 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
     [SerializeField] public EnemyController enemyController;
     [SerializeField] public EnemyVision enemyVision;
     [SerializeField] public EnemyData enemyData;
+    [SerializeField] public EnemyAudio enemyAudio;
+
     [SerializeField] public EnemyStateManager enemyStateManager;
+
 
 
     [Header("States")]
@@ -60,7 +63,7 @@ public class EnemyStateManager : BaseFSM<EEnemyState, AEnemyState>
              {
                         { EEnemyState.Default, new DefaultState(enemyController,enemyVision,enemyData,enemyStateManager)},
                         { EEnemyState.Patrolling, new PatrollingState(enemyController,enemyVision,enemyData,enemyStateManager, patrollingState.waitTime)},
-                        { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,warnedState.warnedTime,warnedState.exclamationMarkGO) },
+                        { EEnemyState.Warned, new WarnedState(enemyController,enemyVision,enemyData,enemyStateManager,enemyAudio, warnedState.warnedTime,warnedState.exclamationMarkGO) },
                         { EEnemyState.Hunting, new HuntingState(enemyController,enemyVision,enemyData,enemyStateManager) },
                         { EEnemyState.Attacking, new AttackingState(enemyController,enemyVision,enemyData,enemyStateManager) }
              };
