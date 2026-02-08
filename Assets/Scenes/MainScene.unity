@@ -667,6 +667,8 @@ MonoBehaviour:
     sceneSet: {fileID: 11400000, guid: a2446e9b6e0b901478f4ebb2ed247be1, type: 2}
   gameoverState:
     sceneSet: {fileID: 11400000, guid: d64178956c627e44d9a8271bc310343f, type: 2}
+    audioClip: {fileID: 8300000, guid: bdcf74fc6a6fbb1409e51f719e011217, type: 3}
+    source: {fileID: 2140982568}
   victoryState:
     sceneSet: {fileID: 11400000, guid: e1da73d6a8ef4fb41bd200cd7d1eb926, type: 2}
     victoryClip: {fileID: 8300000, guid: 56c87d200f3dde047af7d04927695d23, type: 3}
@@ -694,7 +696,7 @@ AudioSource:
   m_GameObject: {fileID: 2140982564}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 073dac785c516f848b5599a6f16de39e, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1

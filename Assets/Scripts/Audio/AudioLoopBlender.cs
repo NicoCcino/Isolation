@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Audio;
 
 [System.Serializable]
 public class AudioLayer
@@ -27,7 +28,7 @@ public class AudioLoopBlender : MonoBehaviour
     [Tooltip("Number of simultaneous events allowed")]
     public int eventPoolSize = 4;
     public float eventFadeSpeed = 3.0f;
-
+    public AudioMixerGroup audioMixerGroup;
     [Header("Audio Clips")]
     public List<AudioLayer> audioLayers = new List<AudioLayer>();
 
@@ -79,6 +80,7 @@ public class AudioLoopBlender : MonoBehaviour
             src.loop = false;
             src.spatialBlend = 0f;
             src.playOnAwake = false;
+            src.outputAudioMixerGroup = audioMixerGroup;
             eventPool.Add(src);
         }
     }
