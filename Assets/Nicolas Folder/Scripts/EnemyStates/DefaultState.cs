@@ -8,7 +8,7 @@ public class DefaultState : AEnemyState
 
     public override void Enter()
     {
-
+        enemyStateManager.ChangeState(EEnemyState.Patrolling);
     }
 
     public override void Exit()

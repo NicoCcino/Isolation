@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FOW.FogOfWarRevealer3D
   ViewRadius: 4
-  SoftenDistance: 3
+  SoftenDistance: 2.7
   ViewAngle: 360
   UnobscuredRadius: 1
   Opacity: 1
