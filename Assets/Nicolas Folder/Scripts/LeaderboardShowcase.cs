@@ -10,7 +10,7 @@ namespace Dan.Demo
     {
         [Header("Gameplay:")]
         [SerializeField] private TextMeshProUGUI _playerScoreText;
-        
+
         [Header("Leaderboard Essentials:")]
         [SerializeField] private TMP_InputField _playerUsernameInput;
         [SerializeField] private Transform _entryDisplayParent;
@@ -26,19 +26,34 @@ namespace Dan.Demo
         [SerializeField] private RectTransform _personalEntryPanel;
         [SerializeField] private TextMeshProUGUI _personalEntryText;
 
-        private int _playerScore;
-        
+        public int localHighScore = 0;
+
         private Coroutine _personalEntryMoveCoroutine;
+
+        public void GetLocalScore()
+        {
+            if (GameOutcomeManager.Instance != null){
+                localHighScore = GameOutcomeManager.Instance.highScore;
+                if (localHighScore == 0)
+                {
+                    _playerScoreText.text = "You haven't managed to escape yet";
+                }
+                else
+                {
+                     _playerScoreText.text = $"Your score (time left when you escaped): {localHighScore} seconds";
+
+                }
+            }
+        }
 
         public void AddPlayerScore()
         {
-            _playerScore++;
-            _playerScoreText.text = $"Your score: {_playerScore}";
+            GetLocalScore();
         }
-        
+
         public void Load()
         {
-            var timePeriod = 
+            var timePeriod =
                 _timePeriodDropdown.value == 1 ? Dan.Enums.TimePeriodType.Today :
                 _timePeriodDropdown.value == 2 ? Dan.Enums.TimePeriodType.ThisWeek :
                 _timePeriodDropdown.value == 3 ? Dan.Enums.TimePeriodType.ThisMonth :
@@ -47,22 +62,22 @@ namespace Dan.Demo
             var pageNumber = int.TryParse(_pageInput.text, out var pageValue) ? pageValue : _defaultPageNumber;
             pageNumber = Mathf.Max(1, pageNumber);
             _pageInput.text = pageNumber.ToString();
-            
+
             var take = int.TryParse(_entriesToTakeInput.text, out var takeValue) ? takeValue : _defaultEntriesToTake;
             take = Mathf.Clamp(take, 1, 100);
             _entriesToTakeInput.text = take.ToString();
-            
+
             var searchQuery = new LeaderboardSearchQuery
             {
                 Skip = (pageNumber - 1) * take,
                 Take = take,
                 TimePeriod = timePeriod
             };
-            
+
             _pageInput.image.color = Color.white;
             _entriesToTakeInput.image.color = Color.white;
-            
-            Leaderboards.DemoSceneLeaderboard.GetEntries(searchQuery, OnLeaderboardLoaded, ErrorCallback);
+
+            Leaderboards.EscapeTheNursingHome.GetEntries(searchQuery, OnLeaderboardLoaded, ErrorCallback);
             ToggleLoadingPanel(true);
         }
 
@@ -73,18 +88,18 @@ namespace Dan.Demo
             if (pageNumber < 1) return;
             _pageInput.text = pageNumber.ToString();
         }
-        
+
         private void OnLeaderboardLoaded(Entry[] entries)
         {
-            foreach (Transform t in _entryDisplayParent) 
+            foreach (Transform t in _entryDisplayParent)
                 Destroy(t.gameObject);
 
-            foreach (var t in entries) 
+            foreach (var t in entries)
                 CreateEntryDisplay(t);
-            
+
             ToggleLoadingPanel(false);
         }
-        
+
         private void ToggleLoadingPanel(bool isOn)
         {
             _leaderboardLoadingPanel.alpha = isOn ? 1f : 0f;
@@ -94,9 +109,9 @@ namespace Dan.Demo
 
         public void MovePersonalEntryMenu(float xPos)
         {
-            if (_personalEntryMoveCoroutine != null) 
+            if (_personalEntryMoveCoroutine != null)
                 StopCoroutine(_personalEntryMoveCoroutine);
-            _personalEntryMoveCoroutine = StartCoroutine(MoveMenuCoroutine(_personalEntryPanel, 
+            _personalEntryMoveCoroutine = StartCoroutine(MoveMenuCoroutine(_personalEntryPanel,
                 new Vector2(xPos, _personalEntryPanel.anchoredPosition.y)));
         }
 
@@ -111,11 +126,11 @@ namespace Dan.Demo
                 rectTransform.anchoredPosition = Vector2.Lerp(startPosition, anchoredPosition, time / duration);
                 yield return null;
             }
-            
+
             rectTransform.anchoredPosition = anchoredPosition;
             _personalEntryMoveCoroutine = null;
         }
-        
+
         private void CreateEntryDisplay(Entry entry)
         {
             var entryDisplay = Instantiate(_entryDisplayPrefab.gameObject, _entryDisplayParent);
@@ -131,7 +146,7 @@ namespace Dan.Demo
                 text.text = loadingText;
                 yield return new WaitForSeconds(0.25f);
             }
-            
+
             StartCoroutine(LoadingTextCoroutine(text));
         }
 
@@ -145,21 +160,22 @@ namespace Dan.Demo
             _pageInput.placeholder.GetComponent<TextMeshProUGUI>().text = _defaultPageNumber.ToString();
             _entriesToTakeInput.placeholder.GetComponent<TextMeshProUGUI>().text = _defaultEntriesToTake.ToString();
         }
-        
+
         private void Start()
         {
             InitializeComponents();
+            GetLocalScore();
             Load();
         }
 
         public void Submit()
         {
-            Leaderboards.DemoSceneLeaderboard.UploadNewEntry(_playerUsernameInput.text, _playerScore, Callback, ErrorCallback);
+            Leaderboards.EscapeTheNursingHome.UploadNewEntry(_playerUsernameInput.text, localHighScore, Callback, ErrorCallback);
         }
-        
+
         public void DeleteEntry()
         {
-            Leaderboards.DemoSceneLeaderboard.DeleteEntry(Callback, ErrorCallback);
+            Leaderboards.EscapeTheNursingHome.DeleteEntry(Callback, ErrorCallback);
         }
 
         public void ResetPlayer()
@@ -169,7 +185,7 @@ namespace Dan.Demo
 
         public void GetPersonalEntry()
         {
-            Leaderboards.DemoSceneLeaderboard.GetPersonalEntry(OnPersonalEntryLoaded, ErrorCallback);
+            Leaderboards.EscapeTheNursingHome.GetPersonalEntry(OnPersonalEntryLoaded, ErrorCallback);
         }
 
         private void OnPersonalEntryLoaded(Entry entry)
@@ -177,13 +193,13 @@ namespace Dan.Demo
             _personalEntryText.text = $"{entry.RankSuffix()}. {entry.Username} : {entry.Score}";
             MovePersonalEntryMenu(0f);
         }
-        
+
         private void Callback(bool success)
         {
             if (success)
                 Load();
         }
-        
+
         private void ErrorCallback(string error)
         {
             Debug.LogError(error);
