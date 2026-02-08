@@ -59,7 +59,7 @@ public class TimedEventManager : Singleton<TimedEventManager>
                 Debug.Log("Play : " + timedEventEntries[i].timedEvent.audioClip);
 
                 audioSource.PlayOneShot(
-                    timedEventEntries[i].timedEvent.audioClip
+                    timedEventEntries[i].timedEvent.audioClip, 0.3f
                 );
 
                 // réassigner la struct modifiée
