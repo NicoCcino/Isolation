@@ -5,6 +5,7 @@ public class SwitchInteract : MonoBehaviour
 {
 
     public bool playerInRange;
+    public Transform textAnchor;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -27,6 +28,9 @@ public class SwitchInteract : MonoBehaviour
         {
             playerInRange = true;
             Debug.Log("Player dans la zone");
+            // Show UI
+            textAnchor.gameObject.SetActive(true);
+            //UIEKeyGO.GetComponent<UISwitchInteractKey>().lightSwitchGO = this.gameObject;
         }
     }
 
@@ -36,6 +40,8 @@ public class SwitchInteract : MonoBehaviour
         {
             playerInRange = false;
             Debug.Log("Player sorti de la zone");
+            // Hide UI
+            textAnchor.gameObject.SetActive(false);
         }
     }
 
