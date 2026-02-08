@@ -1,46 +1,71 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using NaughtyAttributes;
 using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(AudioSource))]
 public class TimedEventManager : Singleton<TimedEventManager>
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    [System.Serializable]
+    public struct TimedEventEntry
+    {
+        public TimedEvent timedEvent;
+        public bool hasPlayed;
+    }
     [SerializeField] private TimedEvent[] TimedEventList;
+
     private AudioSource audioSource;
-    private Dictionary<TimedEvent,bool> TimedEventPlayMap; 
+
+    private TimedEventEntry[] timedEventEntries;
+
     void Start()
     {
-        Debug.Log("TimedEventList size" + TimedEventList.Length);
-        foreach (TimedEvent timedEvent in TimedEventList)
+        audioSource = GetComponent<AudioSource>();
+
+        // Initialiser l'array de paires
+        timedEventEntries = new TimedEventEntry[TimedEventList.Length];
+
+        for (int i = 0; i < TimedEventList.Length; i++)
         {
-            Debug.Log("Added : " + timedEvent);
-            TimedEventPlayMap.Add(timedEvent,false);
+            timedEventEntries[i] = new TimedEventEntry
+            {
+                timedEvent = TimedEventList[i],
+                hasPlayed = false
+            };
+
+            Debug.Log("Added : " + TimedEventList[i]);
         }
-        audioSource = this.gameObject.GetComponent<AudioSource>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        foreach(TimedEvent timedEvent in TimedEventPlayMap.Keys)
+        CheckTimedEvents();
+    }
+
+    void CheckTimedEvents()
+    {
+        float timer = GameOutcomeManager.Instance.GetTimerProgression();
+        Debug.Log("Timer: " + timer);
+
+        for (int i = 0; i < timedEventEntries.Length; i++)
         {
-            if (TimedEventPlayMap[timedEvent] == false
-                && GameOutcomeManager.Instance.GetTimerProgression() >= timedEvent.RunDurationPercentageStart 
-                && GameOutcomeManager.Instance.GetTimerProgression()<= timedEvent.RunDurationPercentageStop)
-            {   
-                    Debug.Log("Play : " + timedEvent.audioClip);
-                    audioSource.clip = timedEvent.audioClip;
-                    audioSource.Play();
-                    TimedEventPlayMap[timedEvent]=true; 
-                             
-            }
-            if(TimedEventPlayMap[timedEvent] == true 
-                && GameOutcomeManager.Instance.GetTimerProgression() >= timedEvent.RunDurationPercentageStop)
+            Debug.Log($"Checking on {timedEventEntries[i].timedEvent.name} if {!timedEventEntries[i].hasPlayed} && {timer} >= {timedEventEntries[i].timedEvent.RunDurationPercentageStart}");
+            if (!timedEventEntries[i].hasPlayed &&
+                timer >= timedEventEntries[i].timedEvent.RunDurationPercentageStart)
             {
-                audioSource.Stop();
-                TimedEventPlayMap[timedEvent] = false;
+                Debug.Log("Play : " + timedEventEntries[i].timedEvent.audioClip);
+
+                audioSource.PlayOneShot(
+                    timedEventEntries[i].timedEvent.audioClip
+                );
+
+                // réassigner la struct modifiée
+                var entry = timedEventEntries[i];
+                entry.hasPlayed = true;
+                timedEventEntries[i] = entry;
             }
         }
     }

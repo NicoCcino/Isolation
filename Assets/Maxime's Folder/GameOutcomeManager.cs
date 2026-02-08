@@ -66,7 +66,7 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     public int GetTimerProgression()
     {
         int TimerProgression = 0;
-        TimerProgression = (int) Math.Round(Timer/GameDuration);
+        TimerProgression = (int) Math.Round(100*Timer/GameDuration);
         return TimerProgression;
     }
 }
