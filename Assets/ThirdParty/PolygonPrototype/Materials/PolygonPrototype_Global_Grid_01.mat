@@ -22,7 +22,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: PolygonPrototype_Global_Grid_01
   m_Shader: {fileID: -6465566751694194690, guid: bf00925b2fbda49499ccc0de47e0d8ca, type: 3}
-  m_Parent: {fileID: 0}
+  m_Parent: {fileID: 2100000, guid: ac9e362b60b9fe44786fcc3dd197a84e, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -38,31 +38,14 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _Grid:
-        m_Texture: {fileID: 2800000, guid: 2a09470ada0c47849ad79d26363f8e4a, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - unity_Lightmaps:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - unity_LightmapsInd:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - unity_ShadowMasks:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 792d0f119fdb13f4b91674c99f744692, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - OverlayAmount: 0.5
-    - _Falloff: 50
-    - _GridScale: 1
-    - _OverlayAmount: 0.5
-    - _QueueControl: 0
-    - _QueueOffset: 0
-    - __dirty: 0
+    - OverlayAmount: 1
+    - _GridScale: 0.3
     m_Colors:
-    - _BaseColor: {r: 1, g: 0.724138, b: 0, a: 0}
+    - _BaseColor: {r: 0.8018868, g: 0.8018868, b: 0.8018868, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
