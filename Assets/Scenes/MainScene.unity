@@ -174,8 +174,8 @@ MonoBehaviour:
   UnknownColor: {r: 0.047169805, g: 0.047169805, b: 0.047169805, a: 1}
   SaturationStrength: 0
   BlurStrength: 1
-  BlurDistanceScreenPercentMin: 0.1
-  BlurDistanceScreenPercentMax: 1.5
+  BlurDistanceScreenPercentMin: 0.3
+  BlurDistanceScreenPercentMax: 1.2
   BlurSamples: 6
   FogTexture: {fileID: 0}
   UseTriplanar: 1
@@ -237,7 +237,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb0864e28d07a19459288d2ad72d6071, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FogOfWarPointTester
-  dontDestroyOnLoad: 1
+  dontDestroyOnLoad: 0
   Revealers: []
 --- !u!1 &722438854
 GameObject:

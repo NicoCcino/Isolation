@@ -13,11 +13,13 @@ public class WarnedState : AEnemyState
 
     public float WarnedTimer { get => warnedTimer; }
 
-    public WarnedState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager, EnemyAudio enemyAudio, float warnedTime, GameObject exclamationMarkGO) : base(enemyController, enemyVision, enemyData, enemyStateManager)
+    public WarnedState(EnemyController enemyController, EnemyVision enemyVision, EnemyData enemyData, EnemyStateManager enemyStateManager, EnemyAudio enemyAudio, float warnedTimeToAttack, GameObject exclamationMarkGO, float startWarnedTimer, float delayBeforeMovingTowardsPlayer) : base(enemyController, enemyVision, enemyData, enemyStateManager)
     {
-        this.warnedTimeToAttack = warnedTime;
+        this.warnedTimeToAttack = warnedTimeToAttack;
+        this.startWarnedTimer = startWarnedTimer;
         this.exclamationMarkGO = exclamationMarkGO;
         this.enemyAudio = enemyAudio;
+        this.delayBeforeMovingTowardsPlayer = delayBeforeMovingTowardsPlayer;
     }
 
     public override void Enter()
@@ -78,6 +80,7 @@ public class WarnedState : AEnemyState
         {
             enemyStateManager.ChangeState(EEnemyState.Patrolling);
         }
+        Debug.Log(warnedTimer);
 
     }
 }

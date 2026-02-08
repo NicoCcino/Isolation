@@ -130,6 +130,7 @@ MonoBehaviour:
   PlayerHider: {fileID: 4233763470979386095}
   lightShaderLerp: {fileID: 1600698208944918262}
   IsInLight: 0
+  IsMakingNoise: 0
 --- !u!1 &3473762519084556738
 GameObject:
   m_ObjectHideFlags: 0
@@ -1143,6 +1144,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 784098812128960196, guid: c71ce31372b65b7468ac1d3ba6603d73, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5090269523291278532, guid: c71ce31372b65b7468ac1d3ba6603d73, type: 3}
+      propertyPath: ObstructionLayers.m_Bits
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7759936947028882322, guid: c71ce31372b65b7468ac1d3ba6603d73, type: 3}
