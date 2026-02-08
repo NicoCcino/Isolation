@@ -26,30 +26,30 @@ namespace Dan.Demo
         [SerializeField] private RectTransform _personalEntryPanel;
         [SerializeField] private TextMeshProUGUI _personalEntryText;
 
-        public int localHighScore = 0;
-
         private Coroutine _personalEntryMoveCoroutine;
 
         public void GetLocalScore()
         {
-            if (GameOutcomeManager.Instance != null){
-                localHighScore = GameOutcomeManager.Instance.highScore;
-                if (localHighScore == 0)
+            Debug.Log("High score ="+GameOutcomeManager.highScore);
+            if (GameOutcomeManager.highScore != null){
+                if (GameOutcomeManager.highScore == 0)
                 {
                     _playerScoreText.text = "You haven't managed to escape yet";
                 }
                 else
                 {
-                     _playerScoreText.text = $"Your score (time left when you escaped): {localHighScore} seconds";
+                    string displayText = $"Your score (time left when you escaped): {GameOutcomeManager.highScore} seconds";
+                     _playerScoreText.text = displayText;
 
                 }
             }
         }
 
-        public void AddPlayerScore()
+        public void OnEnable()
         {
             GetLocalScore();
         }
+
 
         public void Load()
         {
@@ -170,7 +170,7 @@ namespace Dan.Demo
 
         public void Submit()
         {
-            Leaderboards.EscapeTheNursingHome.UploadNewEntry(_playerUsernameInput.text, localHighScore, Callback, ErrorCallback);
+            Leaderboards.EscapeTheNursingHome.UploadNewEntry(_playerUsernameInput.text, GameOutcomeManager.highScore, Callback, ErrorCallback);
         }
 
         public void DeleteEntry()

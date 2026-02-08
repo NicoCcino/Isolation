@@ -19,7 +19,7 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
     private float Timer = 0;
     public float GameDuration = 10;
 
-    public int highScore;
+    public static int highScore;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -29,7 +29,6 @@ public class GameOutcomeManager : Singleton<GameOutcomeManager>
         //Reset state variable
         Timer = 0;
         GameOutcome = E_GameOutcome.None;
-        highScore = -1; // Highscore will be time left when escaped
     }
 
     public void Victory(string SuccessReason)
