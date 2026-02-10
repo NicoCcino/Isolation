@@ -14,7 +14,7 @@ public class LeaderboardButton : ASimpleButton
     void Update()
     {
         // If player presses L, go to leaderboard.
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
         {
             OpenLeaderboard();
         }
